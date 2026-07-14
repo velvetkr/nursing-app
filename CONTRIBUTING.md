@@ -30,13 +30,15 @@ git commit -m "feat: add your feature"
 git push -u origin feat/your-feature
 ```
 
-发起 Pull Request 前执行：
+发起 Pull Request 前优先执行：
 
 ```bash
 npm.cmd run lint
 npm.cmd run test:run
 npm.cmd run build:h5
 ```
+
+课程项目阶段，CI 暂不作为合并硬门槛；如果本地环境无法完整执行全部命令，请在 PR 中说明原因，并至少手动验证本次修改涉及的页面流程。
 
 如果使用 pnpm，请使用项目锁定的 pnpm 版本并执行对应脚本。
 
@@ -60,7 +62,8 @@ chore: 更新依赖
 - 页面改动附运行截图或录屏。
 - 接口改动同步更新 API 文档和 Mock。
 - 修改公共文件 `src/utils/request.js`、`src/uni.scss`、`src/pages.json`、`src/main.js`、`package.json` 时，PR 描述中说明影响范围。
-- 至少通过 1 名成员 Review，并通过 CI 后才能合并。
+- 至少通过 1 名成员 Review 后才能合并。
+- CI 如果正常运行，应优先修复红色检查；课程项目阶段不因 CI 环境问题阻塞合并。
 
 ## 代码约定
 
