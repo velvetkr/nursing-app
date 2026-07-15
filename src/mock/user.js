@@ -155,6 +155,14 @@ function buildAuthResponse(user, currentRole) {
   }
 }
 
+function getUserFromToken(options) {
+  const auth = options.headers?.Authorization || options.headers?.authorization || ''
+  const token = auth.replace('Bearer ', '')
+  if (!token || tokenBlacklist.has(token)) return null
+  const userId = Number(token.match(/mock_jwt_(\d+)/)?.[1] || 0)
+  return findMockUserById(userId)
+}
+
 export function findMockUserById(userId) {
   return [...users.values()].find((user) => user.userId === Number(userId)) || null
 }
@@ -305,6 +313,38 @@ Mock.mock(/\/api\/v1\/users\/login/, 'post', (options) => {
     data: {
       ...buildAuthResponse(user, targetRole),
     },
+  }
+})
+
+// ========== 3.1 查询可用身份与切换身份 ==========
+Mock.mock(/\/api\/v1\/profile\/roles$/, 'get', (options) => {
+  const user = getUserFromToken(options)
+  if (!user) return { code: 1002, message: '登录已过期，请重新登录', data: null }
+  return {
+    code: 0,
+    message: 'success',
+    data: {
+      roles: user.roles || [ROLES.CUSTOMER],
+      merchantId: user.merchantId || null,
+      caregiverId: user.caregiverId || null,
+    },
+  }
+})
+
+Mock.mock(/\/api\/v1\/auth\/switch-role$/, 'post', (options) => {
+  const user = getUserFromToken(options)
+  if (!user) return { code: 1002, message: '登录已过期，请重新登录', data: null }
+  const { targetRole } = JSON.parse(options.body || '{}')
+  if (!Object.values(ROLES).includes(targetRole) || targetRole === ROLES.ADMIN) {
+    return { code: 2020, message: '请选择有效的目标身份', data: null }
+  }
+  if (!(user.roles || []).includes(targetRole)) {
+    return { code: 2021, message: '该账号尚未开通所选身份', data: null }
+  }
+  return {
+    code: 0,
+    message: '身份切换成功',
+    data: buildAuthResponse(user, targetRole),
   }
 })
 

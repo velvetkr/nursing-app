@@ -128,7 +128,7 @@ function buildPayload() { return { realName: form.realName.trim(), gender: form.
 async function save(shouldSubmit) { if (shouldSubmit) { const message = validate(); if (message) return uni.showToast({ title: message, icon: 'none' }) } submitting.value = true; try { if (shouldSubmit) { await caregiverStore.submitApplication(buildPayload()); uni.showToast({ title: '已提交审核', icon: 'success' }) } else { await caregiverStore.saveApplication(buildPayload()); uni.showToast({ title: '草稿已保存', icon: 'success' }) } } finally { submitting.value = false } }
 function getRecordLabel(action) { return { SUBMIT: '提交认证', APPROVE: '审核通过', REJECT: '审核驳回' }[action] || action }
 function formatTime(value) { return value ? value.replace('T', ' ').replace(/\+08:00$/, '').slice(0, 16) : '--' }
-function showLoginTip() { uni.showModal({ title: '身份已开通', content: '请退出当前会话，在登录页选择“护理人员”身份重新登录，即可进入护理工作台。', confirmText: '我知道了', showCancel: false }) }
+function showLoginTip() { uni.showModal({ title: '身份已开通', content: '现在可以直接切换到护理人员工作台，无需退出重新登录。', confirmText: '切换身份', success: ({ confirm }) => { if (confirm) uni.navigateTo({ url: '/pages/role-switch/role-switch' }) } }) }
 </script>
 
 <style lang="scss" scoped>

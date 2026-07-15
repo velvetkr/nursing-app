@@ -231,6 +231,53 @@ describe('userStore — 个人信息', () => {
     expect(store.userInfo.phone).toBe('138****8000') // 保留原有字段
     expect(store.userInfo.version).toBe(2)
   })
+
+  it('fetchRoles 刷新已审核身份和关联档案编号', async () => {
+    http.get.mockResolvedValueOnce({
+      code: 0,
+      data: {
+        roles: [ROLES.CUSTOMER, ROLES.CAREGIVER],
+        caregiverId: 50008,
+        merchantId: null,
+      },
+    })
+    const store = useUserStore()
+    const roleStore = useRoleStore()
+    store.userInfo = { userId: 8, roles: [ROLES.CUSTOMER], currentRole: ROLES.CUSTOMER }
+    roleStore.applyAuthSession({ roles: [ROLES.CUSTOMER], currentRole: ROLES.CUSTOMER })
+
+    await store.fetchRoles()
+
+    expect(http.get).toHaveBeenCalledWith('/api/v1/profile/roles')
+    expect(roleStore.availableRoles).toEqual([ROLES.CUSTOMER, ROLES.CAREGIVER])
+    expect(store.userInfo.caregiverId).toBe(50008)
+  })
+
+  it('switchRole 使用后端新会话替换当前角色和权限', async () => {
+    http.post.mockResolvedValueOnce({
+      code: 0,
+      data: {
+        token: 'merchant-token',
+        roles: [ROLES.CUSTOMER, ROLES.MERCHANT_MEMBER],
+        currentRole: ROLES.MERCHANT_MEMBER,
+        permissions: ['merchant:order:view'],
+        user: { userId: 9, merchantId: 20009 },
+      },
+    })
+    const store = useUserStore()
+
+    await store.switchRole(ROLES.MERCHANT_MEMBER)
+
+    const roleStore = useRoleStore()
+    expect(http.post).toHaveBeenCalledWith('/api/v1/auth/switch-role', {
+      targetRole: ROLES.MERCHANT_MEMBER,
+    }, {
+      idempotentKey: '00000000-0000-4000-8000-000000000001',
+    })
+    expect(store.token).toBe('merchant-token')
+    expect(roleStore.currentRole).toBe(ROLES.MERCHANT_MEMBER)
+    expect(roleStore.permissions).toEqual(['merchant:order:view'])
+  })
 })
 
 // helper — 从 storage 读取 token

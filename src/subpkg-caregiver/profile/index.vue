@@ -24,6 +24,7 @@ const userStore = useUserStore()
 const caregiverStore = useCaregiverStore()
 const profile = computed(() => caregiverStore.profile)
 const menus = [
+  { label: '切换身份', desc: '进入顾客或其他已开通工作台', icon: 'reload', url: '/pages/role-switch/role-switch' },
   { label: '认证资料', desc: '基础资料、证书和服务能力', icon: 'account', url: '/subpkg-caregiver/apply/index' },
   { label: '服务区域', desc: '查看当前可服务区域', icon: 'map', url: '/subpkg-caregiver/apply/index' },
   { label: '隐私与安全', desc: '账号保护和隐私设置', icon: 'lock', url: '' },

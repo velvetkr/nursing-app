@@ -57,6 +57,10 @@
       "style": { "navigationBarTitleText": "我的" }
     },
     {
+      "path": "pages/role-switch/role-switch",
+      "style": { "navigationBarTitleText": "切换身份" }
+    },
+    {
       "path": "pages/order/order-list",
       "style": { "navigationBarTitleText": "我的订单" }
     },

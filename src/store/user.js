@@ -126,6 +126,33 @@ export const useUserStore = defineStore(
       return userInfo.value
     }
 
+    async function fetchRoles() {
+      const res = await http.get('/api/v1/profile/roles')
+      const roles = res.data?.roles || []
+      const roleStore = useRoleStore()
+      roleStore.applyAuthSession({
+        roles,
+        currentRole: roleStore.currentRole,
+        permissions: roleStore.permissions,
+      })
+      userInfo.value = {
+        ...userInfo.value,
+        roles,
+        merchantId: res.data?.merchantId ?? userInfo.value?.merchantId ?? null,
+        caregiverId: res.data?.caregiverId ?? userInfo.value?.caregiverId ?? null,
+      }
+      setUserInfo(userInfo.value)
+      return roles
+    }
+
+    async function switchRole(targetRole) {
+      const res = await http.post('/api/v1/auth/switch-role', { targetRole }, {
+        idempotentKey: createIdempotentKey('switch-role'),
+      })
+      _onAuthSuccess(res.data)
+      return res.data
+    }
+
     /** 修改个人信息 */
     async function updateProfile(data) {
       const res = await http.patch('/api/v1/users/profile', {
@@ -166,6 +193,8 @@ export const useUserStore = defineStore(
       register,
       doLogout,
       fetchProfile,
+      fetchRoles,
+      switchRole,
       updateProfile,
       uploadFile,
     }

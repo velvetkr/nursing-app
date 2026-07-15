@@ -21,9 +21,9 @@
     </view>
 
     <view class="menu-panel">
-      <view v-for="item in menus" :key="item.label" class="menu-item" @click="navigate(item.url)">
+      <view v-for="item in visibleMenus" :key="item.label" class="menu-item" @click="navigate(item.url)">
         <view class="menu-icon"><u-icon :name="item.icon" size="22" color="#3A7BF7" /></view>
-        <view class="menu-copy"><text class="menu-title">{{ item.label }}</text><text class="menu-desc">{{ item.desc }}</text></view>
+        <view class="menu-copy"><text class="menu-title">{{ item.label }}</text><text class="menu-desc">{{ item.roleOnly ? `当前身份：${getRoleLabel(roleStore.currentRole)}` : item.desc }}</text></view>
         <u-icon name="arrow-right" size="16" color="#C5CDD8" />
       </view>
     </view>
@@ -34,9 +34,13 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { getRoleLabel } from '@/constants/roles.js'
+import { useRoleStore } from '@/store/role.js'
 import { useUserStore } from '@/store/user.js'
 
 const userStore = useUserStore()
+const roleStore = useRoleStore()
 const orderEntries = [
   { label: '待支付', status: 0, icon: 'rmb-circle', color: '#FF8A5C', tone: 'orange' },
   { label: '待服务', status: 1, icon: 'clock', color: '#3A7BF7', tone: 'blue' },
@@ -44,12 +48,14 @@ const orderEntries = [
   { label: '已取消', status: 3, icon: 'close-circle', color: '#8E9DAE', tone: 'grey' },
 ]
 const menus = [
+  { label: '切换身份', desc: '进入顾客、护理人员或商户工作台', icon: 'reload', url: '/pages/role-switch/role-switch', roleOnly: true },
   { label: '服务地址', desc: '管理上门服务地点', icon: 'map', url: '/pages/address/address-list' },
   { label: '护理人员认证', desc: '提交身份、证书和服务能力资料', icon: 'server-man', url: '/subpkg-caregiver/apply/index' },
   { label: '商户入驻', desc: '提交企业主体和经营资质资料', icon: 'home', url: '/subpkg-merchant/apply/index' },
   { label: '投诉记录', desc: '查看问题处理进度', icon: 'chat', url: '/pages/complaint/complaint-list' },
   { label: '隐私与安全', desc: '账户保护与隐私说明', icon: 'lock', url: '' },
 ]
+const visibleMenus = computed(() => menus.filter((item) => !item.roleOnly || roleStore.availableRoles.length > 1))
 
 function requireLogin() {
   if (userStore.isLoggedIn) return true

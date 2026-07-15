@@ -114,7 +114,7 @@ function getTypeLabel(value) { return typeOptions.find((item) => item.value === 
 function getRecordLabel(action) { return { SUBMIT: '提交入驻', APPROVE: '审核通过', REJECT: '审核驳回' }[action] || action }
 function formatTime(value) { return value ? value.replace('T', ' ').replace(/\+08:00$/, '').slice(0, 16) : '--' }
 function maskPhone(value = '') { return value.length === 11 ? `${value.slice(0, 3)}****${value.slice(-4)}` : value || '--' }
-function showLoginTip() { uni.showModal({ title: '商户身份已开通', content: '请退出当前会话，在登录页选择“商户”身份重新登录，即可进入商户工作台。', confirmText: '我知道了', showCancel: false }) }
+function showLoginTip() { uni.showModal({ title: '商户身份已开通', content: '现在可以直接切换到商户工作台，无需退出重新登录。', confirmText: '切换身份', success: ({ confirm }) => { if (confirm) uni.navigateTo({ url: '/pages/role-switch/role-switch' }) } }) }
 </script>
 
 <style lang="scss" scoped>
