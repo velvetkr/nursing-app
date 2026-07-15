@@ -2,6 +2,7 @@ import Mock from 'mockjs'
 import { CAREGIVER_AUDIT_STATUS } from '@/constants/caregiver-status.js'
 import { ROLES } from '@/constants/roles.js'
 import { findMockUserById, grantMockUserRole } from './user.js'
+import { getCaregiverSchedule } from './caregiver-schedule-state.js'
 
 const applications = new Map([
   [10001, {
@@ -199,6 +200,7 @@ Mock.mock(/\/api\/v1\/caregiver\/profile$/, 'get', (options) => {
     message: 'success',
     data: {
       ...clone(application),
+      serviceArea: (getCaregiverSchedule(application.caregiverId)?.serviceAreas || []).join('、') || application.serviceArea,
       rating: userId === 10002 ? 4.8 : 4.9,
       completedOrders: userId === 10002 ? 88 : 126,
       punctualityRate: userId === 10002 ? 97 : 98,

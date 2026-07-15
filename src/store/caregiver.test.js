@@ -39,4 +39,14 @@ describe('caregiverStore', () => {
     })
     expect(store.canEditApplication).toBe(false)
   })
+
+  it('loads and saves caregiver schedule', async () => {
+    http.get.mockResolvedValueOnce({ data: { caregiverId: 50001, days: [] } })
+    http.put.mockResolvedValueOnce({ data: { caregiverId: 50001, enabled: true, days: [] } })
+    const store = useCaregiverStore()
+    await store.fetchSchedule()
+    await store.saveSchedule({ enabled: true, serviceAreas: ['朝阳区'], days: [] })
+    expect(http.get).toHaveBeenCalledWith('/api/v1/caregiver/schedule')
+    expect(http.put).toHaveBeenCalledWith('/api/v1/caregiver/schedule', { enabled: true, serviceAreas: ['朝阳区'], days: [] })
+  })
 })

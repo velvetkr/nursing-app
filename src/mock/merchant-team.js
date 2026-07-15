@@ -1,6 +1,7 @@
 import Mock from 'mockjs'
 import { COOPERATION_STATUS, MEMBER_STATUS } from '@/constants/team-status.js'
 import { getMockMerchantIdByUserId } from './user.js'
+import { getCaregiverSchedule, getScheduleSummary } from './caregiver-schedule-state.js'
 
 const caregiverRelations = [
   {
@@ -36,13 +37,18 @@ function getQuery(url, key) {
 function maskPhone(phone) { return phone.length === 11 ? `${phone.slice(0, 3)}****${phone.slice(-4)}` : phone }
 function now() { return new Date().toLocaleString('zh-CN', { hour12: false }).replaceAll('/', '-').slice(0, 16) }
 function clone(data) { return JSON.parse(JSON.stringify(data)) }
+function enrichCaregiver(item) {
+  const schedule = getCaregiverSchedule(item.caregiverId)
+  if (!schedule) return item
+  return { ...item, available: Boolean(item.available && schedule.enabled), serviceAreas: schedule.serviceAreas, scheduleSummary: getScheduleSummary(item.caregiverId), maxDailyOrders: schedule.maxDailyOrders }
+}
 
 Mock.mock(/\/api\/v1\/merchant\/caregivers(?:\?|$)/, 'get', (options) => {
   const merchantId = getMerchantId(options)
   if (!merchantId) return { code: 1004, message: '暂无商户权限', data: null }
   const status = getQuery(options.url, 'status')
   const keyword = getQuery(options.url, 'keyword')
-  let list = caregiverRelations.filter((item) => item.merchantId === merchantId)
+  let list = caregiverRelations.filter((item) => item.merchantId === merchantId).map(enrichCaregiver)
   if (status) list = list.filter((item) => item.status === status)
   if (keyword) list = list.filter((item) => `${item.name}${item.phone}${item.skills.join('')}`.includes(keyword))
   const all = caregiverRelations.filter((item) => item.merchantId === merchantId)
@@ -53,7 +59,7 @@ Mock.mock(/\/api\/v1\/merchant\/caregivers\/\d+$/, 'get', (options) => {
   const merchantId = getMerchantId(options)
   const relationId = Number(options.url.match(/caregivers\/(\d+)$/)?.[1])
   const relation = caregiverRelations.find((item) => item.relationId === relationId && item.merchantId === merchantId)
-  return relation ? { code: 0, message: 'success', data: clone(relation) } : { code: 9001, message: '护理人员合作关系不存在', data: null }
+  return relation ? { code: 0, message: 'success', data: clone(enrichCaregiver(relation)) } : { code: 9001, message: '护理人员合作关系不存在', data: null }
 })
 
 Mock.mock(/\/api\/v1\/merchant\/caregivers\/invite$/, 'post', (options) => {
@@ -108,7 +114,7 @@ Mock.mock(/\/api\/v1\/merchant\/members\/\d+\/(disable|enable)$/, 'post', (optio
 })
 
 export function getActiveMerchantCaregivers(merchantId) {
-  return caregiverRelations.filter((item) => item.merchantId === merchantId && item.status === COOPERATION_STATUS.ACTIVE && item.available)
+  return caregiverRelations.filter((item) => item.merchantId === merchantId && item.status === COOPERATION_STATUS.ACTIVE).map(enrichCaregiver)
 }
 
 console.log('[Mock] 商户团队管理模块已加载')

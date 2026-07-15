@@ -15,6 +15,7 @@ import { getMockAddress } from './address.js'
 import { getMockServiceItem, getMockServiceSpec } from './service.js'
 import { getActiveMerchantCaregivers } from './merchant-team.js'
 import { getMockMerchantIdByUserId } from './user.js'
+import { evaluateCaregiverForOrder } from './caregiver-schedule-state.js'
 import {
   calculateCancellation,
   createOrderException,
@@ -519,8 +520,9 @@ Mock.mock(/\/api\/v1\/merchants\/orders\/\d+\/candidates(?:\?|$)/, 'get', (optio
     skills: item.skills,
     available: item.available,
     relationId: item.relationId,
+    ...evaluateCaregiverForOrder(item.caregiverId, order),
   }))
-  if (!list.length) createOrderException(order, EXCEPTION_TYPE.NO_CAREGIVER, '当前团队没有满足条件且可接单的护理人员，请调整排班、邀请人员或联系顾客改期。')
+  if (!list.some((item) => item.eligible)) createOrderException(order, EXCEPTION_TYPE.NO_CAREGIVER, '当前团队没有同时满足排班、区域和接单上限的护理人员，请调整排班、邀请人员或联系顾客改期。')
   return { code: 0, message: 'success', data: { list } }
 })
 
@@ -545,6 +547,8 @@ function handleDispatch(options, isRedispatch = false) {
   const body = JSON.parse(options.body || '{}')
   const caregiver = getActiveMerchantCaregivers(merchantId).find((item) => item.caregiverId === Number(body.caregiverId))
   if (!caregiver?.available) return { code: 5001, message: '护理人员当前不可接单', data: null }
+  const availability = evaluateCaregiverForOrder(caregiver.caregiverId, order)
+  if (!availability.eligible) return { code: 5005, message: availability.conflictReasons.join('、'), data: { conflicts: availability.conflicts } }
 
   if (isRedispatch && order.currentAssignment) {
     order.currentAssignment.status = ASSIGNMENT_STATUS.CANCELED

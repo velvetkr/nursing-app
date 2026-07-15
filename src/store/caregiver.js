@@ -6,6 +6,7 @@ import { CAREGIVER_AUDIT_STATUS } from '@/constants/caregiver-status.js'
 export const useCaregiverStore = defineStore('caregiver', () => {
   const application = ref(null)
   const profile = ref(null)
+  const schedule = ref(null)
   const loading = ref(false)
 
   const auditStatus = computed(() => application.value?.auditStatus || CAREGIVER_AUDIT_STATUS.NOT_APPLIED)
@@ -46,9 +47,27 @@ export const useCaregiverStore = defineStore('caregiver', () => {
     return profile.value
   }
 
+  async function fetchSchedule() {
+    loading.value = true
+    try {
+      const res = await http.get('/api/v1/caregiver/schedule')
+      schedule.value = res.data
+      return schedule.value
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function saveSchedule(payload) {
+    const res = await http.put('/api/v1/caregiver/schedule', payload)
+    schedule.value = res.data
+    return schedule.value
+  }
+
   return {
     application,
     profile,
+    schedule,
     loading,
     auditStatus,
     canEditApplication,
@@ -56,6 +75,7 @@ export const useCaregiverStore = defineStore('caregiver', () => {
     saveApplication,
     submitApplication,
     fetchProfile,
+    fetchSchedule,
+    saveSchedule,
   }
 })
-
