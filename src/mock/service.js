@@ -10,6 +10,14 @@
  * 核心变化：每个服务挂多个规格(specs)，价格在规格上
  */
 import Mock from 'mockjs'
+import {
+  SERVICE_AUDIT_STATUS,
+  SERVICE_PUBLISH_STATUS,
+} from '@/constants/service-status.js'
+
+const Random = Mock.Random
+let nextItemId = 601
+let nextSpecId = 90001
 
 // ========== 服务分类 ==========
 const categories = [
@@ -145,7 +153,87 @@ serviceItems.forEach((item) => {
   item.specs = makeSpecs(bp, item.itemId)
   item.minPrice = Math.min(...item.specs.map((s) => s.price))
   item.createTime = '2026-07-01T10:00:00+08:00'
+  item.updateTime = item.createTime
+  item.merchantId = 20001
+  item.merchantName = '康宁护理中心'
+  item.version = 1
+  item.auditStatus = SERVICE_AUDIT_STATUS.APPROVED
+  item.publishStatus = SERVICE_PUBLISH_STATUS.PUBLISHED
+  item.auditRecords = [
+    { recordId: `audit-${item.itemId}-1`, action: 'APPROVE', operatorName: '平台审核员', remark: '服务资料完整，审核通过', createTime: '2026-07-01T09:30:00+08:00' },
+  ]
 })
+
+serviceItems.push(
+  {
+    itemId: 598,
+    categoryId: 1,
+    categoryName: '专业护理',
+    name: '居家用药指导',
+    description: '护理人员上门核对用药清单，并指导老人安全、规范服药。',
+    coverImage: '',
+    images: [],
+    status: 0,
+    sortOrder: 20,
+    minPrice: 100,
+    merchantId: 20001,
+    merchantName: '康宁护理中心',
+    version: 1,
+    auditStatus: SERVICE_AUDIT_STATUS.DRAFT,
+    publishStatus: SERVICE_PUBLISH_STATUS.OFFLINE,
+    specs: [{ specId: 89801, name: '单次指导', price: 100, originalPrice: 120, duration: 45, status: 1 }],
+    auditRecords: [],
+    createTime: '2026-07-12T09:00:00+08:00',
+    updateTime: '2026-07-12T09:00:00+08:00',
+  },
+  {
+    itemId: 599,
+    categoryId: 2,
+    categoryName: '康复理疗',
+    name: '居家步态训练',
+    description: '康复师上门进行步态评估和辅助行走训练。',
+    coverImage: '',
+    images: [],
+    status: 0,
+    sortOrder: 21,
+    minPrice: 220,
+    merchantId: 20001,
+    merchantName: '康宁护理中心',
+    version: 2,
+    auditStatus: SERVICE_AUDIT_STATUS.REJECTED,
+    publishStatus: SERVICE_PUBLISH_STATUS.OFFLINE,
+    rejectReason: '服务说明过于简单，请补充适用人群、禁忌事项和风险提示。',
+    specs: [{ specId: 89901, name: '60分钟训练', price: 220, originalPrice: 260, duration: 60, status: 1 }],
+    auditRecords: [
+      { recordId: 'audit-599-1', action: 'REJECT', operatorName: '平台审核员', remark: '服务说明过于简单，请补充适用人群、禁忌事项和风险提示。', createTime: '2026-07-13T15:20:00+08:00' },
+    ],
+    createTime: '2026-07-12T11:00:00+08:00',
+    updateTime: '2026-07-13T15:20:00+08:00',
+  },
+  {
+    itemId: 600,
+    categoryId: 4,
+    categoryName: '专项护理',
+    name: '伤口换药护理',
+    description: '由具备资质的护理人员上门进行伤口评估、清洁和规范换药。',
+    coverImage: '',
+    images: [],
+    status: 0,
+    sortOrder: 22,
+    minPrice: 180,
+    merchantId: 20001,
+    merchantName: '康宁护理中心',
+    version: 1,
+    auditStatus: SERVICE_AUDIT_STATUS.PENDING_REVIEW,
+    publishStatus: SERVICE_PUBLISH_STATUS.OFFLINE,
+    specs: [{ specId: 90000, name: '基础换药', price: 180, originalPrice: 210, duration: 60, status: 1 }],
+    auditRecords: [
+      { recordId: 'audit-600-1', action: 'SUBMIT', operatorName: '商户运营', remark: '提交平台审核', createTime: '2026-07-15T08:40:00+08:00' },
+    ],
+    createTime: '2026-07-14T16:00:00+08:00',
+    updateTime: '2026-07-15T08:40:00+08:00',
+  }
+)
 
 export function getMockServiceItem(itemId) {
   return serviceItems.find((item) => item.itemId === Number(itemId) && item.status === 1) || null
@@ -205,6 +293,71 @@ function buildDetail(item) {
     minPrice: item.minPrice,
     createTime: item.createTime,
   }
+}
+
+function getMerchantIdFromRequest(options) {
+  const auth = options.headers?.Authorization || options.headers?.authorization || ''
+  const userId = Number(auth.match(/mock_jwt_(\d+)_MERCHANT_MEMBER_/)?.[1])
+  return ({ 10003: 20001 })[userId] || null
+}
+
+function getManagedService(options, itemId) {
+  const merchantId = getMerchantIdFromRequest(options)
+  if (!merchantId) return { error: { code: 1004, message: '暂无商户权限', data: null } }
+  const item = serviceItems.find((service) => service.itemId === Number(itemId))
+  if (!item) return { error: { code: 1005, message: '服务项目不存在', data: null } }
+  if (item.merchantId !== merchantId) return { error: { code: 1004, message: '无权操作该服务', data: null } }
+  return { item, merchantId }
+}
+
+function buildManagedService(item) {
+  return {
+    ...item,
+    specs: item.specs.map((spec) => ({ ...spec, serviceItemId: item.itemId })),
+  }
+}
+
+function validateServiceBody(body) {
+  if (!body.name?.trim()) return '请填写服务名称'
+  if (!body.categoryId) return '请选择服务分类'
+  if (!body.description?.trim() || body.description.trim().length < 10) return '服务说明至少10个字符'
+  if (!Array.isArray(body.specs) || !body.specs.length) return '至少添加一个服务规格'
+  for (const spec of body.specs) {
+    if (!spec.name?.trim() || Number(spec.price) <= 0 || Number(spec.duration) <= 0) {
+      return '请完整填写规格名称、价格和服务时长'
+    }
+  }
+  return ''
+}
+
+function normalizeSpecs(specs = []) {
+  return specs.map((spec) => ({
+    specId: spec.specId || nextSpecId++,
+    name: spec.name.trim(),
+    price: Number(spec.price),
+    originalPrice: Number(spec.originalPrice || spec.price),
+    duration: Number(spec.duration),
+    status: 1,
+  }))
+}
+
+function resolvePendingReviews() {
+  const now = Date.now()
+  serviceItems.forEach((item) => {
+    if (item.auditStatus !== SERVICE_AUDIT_STATUS.PENDING_REVIEW || !item.reviewReadyAt) return
+    if (now < item.reviewReadyAt) return
+    item.auditStatus = SERVICE_AUDIT_STATUS.APPROVED
+    item.rejectReason = ''
+    item.updateTime = new Date().toISOString().replace(/\.\d{3}Z$/, '+08:00')
+    item.auditRecords.unshift({
+      recordId: `audit-${item.itemId}-${Random.string('lower', 6)}`,
+      action: 'APPROVE',
+      operatorName: '模拟平台审核员',
+      remark: '服务资料符合要求，审核通过',
+      createTime: item.updateTime,
+    })
+    delete item.reviewReadyAt
+  })
 }
 
 // ========== 接口 Mock ==========
@@ -294,6 +447,150 @@ Mock.mock(/\/api\/v1\/items\/\d+$/, 'get', (options) => {
     message: 'success',
     data: buildDetail(item),
   }
+})
+
+// 4. 商户服务列表
+Mock.mock(/\/api\/v1\/merchants\/services(?:\?|$)/, 'get', (options) => {
+  resolvePendingReviews()
+  const merchantId = getMerchantIdFromRequest(options)
+  if (!merchantId) return { code: 1004, message: '暂无商户权限', data: null }
+  const auditStatus = getQueryParam(options.url, 'auditStatus')
+  const publishStatus = getQueryParam(options.url, 'publishStatus')
+  const keyword = getQueryParam(options.url, 'keyword')?.trim()
+  let list = serviceItems.filter((item) => item.merchantId === merchantId)
+  if (auditStatus) list = list.filter((item) => item.auditStatus === auditStatus)
+  if (publishStatus) list = list.filter((item) => item.publishStatus === publishStatus)
+  if (keyword) list = list.filter((item) => item.name.includes(keyword))
+  list.sort((a, b) => new Date(b.updateTime) - new Date(a.updateTime))
+  const summary = {
+    total: serviceItems.filter((item) => item.merchantId === merchantId).length,
+    draft: serviceItems.filter((item) => item.merchantId === merchantId && item.auditStatus === SERVICE_AUDIT_STATUS.DRAFT).length,
+    pending: serviceItems.filter((item) => item.merchantId === merchantId && item.auditStatus === SERVICE_AUDIT_STATUS.PENDING_REVIEW).length,
+    approved: serviceItems.filter((item) => item.merchantId === merchantId && item.auditStatus === SERVICE_AUDIT_STATUS.APPROVED).length,
+    rejected: serviceItems.filter((item) => item.merchantId === merchantId && item.auditStatus === SERVICE_AUDIT_STATUS.REJECTED).length,
+    published: serviceItems.filter((item) => item.merchantId === merchantId && item.publishStatus === SERVICE_PUBLISH_STATUS.PUBLISHED).length,
+  }
+  return { code: 0, message: 'success', data: { list: list.map(buildManagedService), summary } }
+})
+
+// 5. 商户服务详情
+Mock.mock(/\/api\/v1\/merchants\/services\/\d+$/, 'get', (options) => {
+  resolvePendingReviews()
+  const itemId = Number(options.url.match(/\/services\/(\d+)$/)?.[1])
+  const result = getManagedService(options, itemId)
+  if (result.error) return result.error
+  return { code: 0, message: 'success', data: buildManagedService(result.item) }
+})
+
+// 6. 创建服务草稿
+Mock.mock(/\/api\/v1\/merchants\/services$/, 'post', (options) => {
+  const merchantId = getMerchantIdFromRequest(options)
+  if (!merchantId) return { code: 1004, message: '暂无商户权限', data: null }
+  const body = JSON.parse(options.body || '{}')
+  const validationMessage = validateServiceBody(body)
+  if (validationMessage) return { code: 1000, message: validationMessage, data: null }
+  const category = categories.find((item) => item.categoryId === Number(body.categoryId))
+  if (!category) return { code: 1005, message: '服务分类不存在', data: null }
+  const now = new Date().toISOString().replace(/\.\d{3}Z$/, '+08:00')
+  const specs = normalizeSpecs(body.specs)
+  const item = {
+    itemId: nextItemId++,
+    categoryId: category.categoryId,
+    categoryName: category.name,
+    name: body.name.trim(),
+    description: body.description.trim(),
+    coverImage: body.coverImage || '',
+    images: body.images || [],
+    status: 0,
+    sortOrder: serviceItems.length + 1,
+    minPrice: Math.min(...specs.map((spec) => spec.price)),
+    merchantId,
+    merchantName: '康宁护理中心',
+    version: 1,
+    auditStatus: SERVICE_AUDIT_STATUS.DRAFT,
+    publishStatus: SERVICE_PUBLISH_STATUS.OFFLINE,
+    specs,
+    auditRecords: [],
+    createTime: now,
+    updateTime: now,
+  }
+  serviceItems.push(item)
+  return { code: 0, message: '服务草稿已创建', data: buildManagedService(item) }
+})
+
+// 7. 修改服务草稿或驳回服务
+Mock.mock(/\/api\/v1\/merchants\/services\/\d+$/, 'put', (options) => {
+  const itemId = Number(options.url.match(/\/services\/(\d+)$/)?.[1])
+  const result = getManagedService(options, itemId)
+  if (result.error) return result.error
+  const { item } = result
+  if (![SERVICE_AUDIT_STATUS.DRAFT, SERVICE_AUDIT_STATUS.REJECTED].includes(item.auditStatus)) {
+    return { code: 6002, message: '当前审核状态不可编辑', data: null }
+  }
+  const body = JSON.parse(options.body || '{}')
+  const validationMessage = validateServiceBody(body)
+  if (validationMessage) return { code: 1000, message: validationMessage, data: null }
+  const category = categories.find((entry) => entry.categoryId === Number(body.categoryId))
+  if (!category) return { code: 1005, message: '服务分类不存在', data: null }
+  item.categoryId = category.categoryId
+  item.categoryName = category.name
+  item.name = body.name.trim()
+  item.description = body.description.trim()
+  item.coverImage = body.coverImage || ''
+  item.images = body.images || []
+  item.specs = normalizeSpecs(body.specs)
+  item.minPrice = Math.min(...item.specs.map((spec) => spec.price))
+  item.version += 1
+  item.auditStatus = SERVICE_AUDIT_STATUS.DRAFT
+  item.rejectReason = ''
+  item.updateTime = new Date().toISOString().replace(/\.\d{3}Z$/, '+08:00')
+  return { code: 0, message: '服务草稿已保存', data: buildManagedService(item) }
+})
+
+// 8. 提交审核
+Mock.mock(/\/api\/v1\/merchants\/services\/\d+\/submit$/, 'post', (options) => {
+  const itemId = Number(options.url.match(/\/services\/(\d+)\/submit/)?.[1])
+  const result = getManagedService(options, itemId)
+  if (result.error) return result.error
+  const { item } = result
+  if (![SERVICE_AUDIT_STATUS.DRAFT, SERVICE_AUDIT_STATUS.REJECTED].includes(item.auditStatus)) {
+    return { code: 6003, message: '当前服务不可提交审核', data: null }
+  }
+  const validationMessage = validateServiceBody(item)
+  if (validationMessage) return { code: 1000, message: validationMessage, data: null }
+  const now = new Date().toISOString().replace(/\.\d{3}Z$/, '+08:00')
+  item.auditStatus = SERVICE_AUDIT_STATUS.PENDING_REVIEW
+  item.publishStatus = SERVICE_PUBLISH_STATUS.OFFLINE
+  item.status = 0
+  item.reviewReadyAt = Date.now() + 8000
+  item.updateTime = now
+  item.auditRecords.unshift({ recordId: `audit-${item.itemId}-${Random.string('lower', 6)}`, action: 'SUBMIT', operatorName: '商户运营', remark: '提交平台审核', createTime: now })
+  return { code: 0, message: '已提交审核，Mock 将在约8秒后自动通过', data: buildManagedService(item) }
+})
+
+// 9. 上架与下架
+Mock.mock(/\/api\/v1\/merchants\/services\/\d+\/publish$/, 'post', (options) => {
+  resolvePendingReviews()
+  const itemId = Number(options.url.match(/\/services\/(\d+)\/publish/)?.[1])
+  const result = getManagedService(options, itemId)
+  if (result.error) return result.error
+  const { item } = result
+  if (item.auditStatus !== SERVICE_AUDIT_STATUS.APPROVED) return { code: 6004, message: '服务尚未审核通过', data: null }
+  item.publishStatus = SERVICE_PUBLISH_STATUS.PUBLISHED
+  item.status = 1
+  item.updateTime = new Date().toISOString().replace(/\.\d{3}Z$/, '+08:00')
+  return { code: 0, message: '服务已上架', data: buildManagedService(item) }
+})
+
+Mock.mock(/\/api\/v1\/merchants\/services\/\d+\/offline$/, 'post', (options) => {
+  const itemId = Number(options.url.match(/\/services\/(\d+)\/offline/)?.[1])
+  const result = getManagedService(options, itemId)
+  if (result.error) return result.error
+  const { item } = result
+  item.publishStatus = SERVICE_PUBLISH_STATUS.OFFLINE
+  item.status = 0
+  item.updateTime = new Date().toISOString().replace(/\.\d{3}Z$/, '+08:00')
+  return { code: 0, message: '服务已下架', data: buildManagedService(item) }
 })
 
 console.log('[Mock] 服务目录模块已加载 (catalog-service v1.0)')

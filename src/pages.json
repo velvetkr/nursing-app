@@ -137,6 +137,14 @@
           "style": { "navigationBarTitleText": "服务管理" }
         },
         {
+          "path": "service-edit/index",
+          "style": { "navigationBarTitleText": "编辑服务" }
+        },
+        {
+          "path": "service-detail/index",
+          "style": { "navigationBarTitleText": "服务详情" }
+        },
+        {
           "path": "profile/index",
           "style": { "navigationBarTitleText": "商户中心" }
         }
