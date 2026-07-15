@@ -15,7 +15,7 @@
       <view class="overview-card"><view><text class="overview-label">累计订单</text><text class="overview-value">{{ dashboard?.totalOrders || 0 }}</text></view><view class="divider" /><view><text class="overview-label">已完成</text><text class="overview-value">{{ dashboard?.completed || 0 }}</text></view><view class="divider" /><view><text class="overview-label">模拟营业额</text><text class="overview-value price">¥{{ dashboard?.monthRevenue || 0 }}</text></view></view>
 
       <view class="section-head"><text class="section-title">快捷操作</text></view>
-      <view class="feature-grid"><view class="feature-card" @click="goOrders('dispatch')"><view class="feature-icon"><u-icon name="share" size="26" color="#3A7BF7" /></view><text class="feature-title">派单调度</text><text class="feature-desc">处理待派单和改派订单</text></view><view class="feature-card" @click="goServices"><view class="feature-icon"><u-icon name="grid" size="26" color="#3A7BF7" /></view><text class="feature-title">服务管理</text><text class="feature-desc">查看服务审核和上架状态</text></view></view>
+      <view class="feature-grid"><view class="feature-card" @click="goOrders('dispatch')"><view class="feature-icon"><u-icon name="share" size="26" color="#3A7BF7" /></view><text class="feature-title">派单调度</text><text class="feature-desc">处理待派单和改派订单</text></view><view class="feature-card" @click="goServices"><view class="feature-icon"><u-icon name="grid" size="26" color="#3A7BF7" /></view><text class="feature-title">服务管理</text><text class="feature-desc">查看服务审核和上架状态</text></view><view class="feature-card" @click="goTeam"><view class="feature-icon"><u-icon name="account" size="26" color="#00A89D" /></view><text class="feature-title">团队管理</text><text class="feature-desc">护理团队、成员岗位与接单状态</text></view></view>
     </view>
     <role-tab-bar :tabs="tabs" current="/subpkg-merchant/home/index" />
   </view>
@@ -38,6 +38,7 @@ const tabs = computed(() => MERCHANT_TABS.map((tab) => tab.label === '订单' ? 
 onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await merchantStore.fetchDashboard() })
 function goOrders(filter) { uni.redirectTo({ url: `/subpkg-merchant/orders/index${filter ? `?filter=${filter}` : ''}` }) }
 function goServices() { uni.redirectTo({ url: '/subpkg-merchant/services/index' }) }
+function goTeam() { uni.navigateTo({ url: '/subpkg-merchant/team/index' }) }
 </script>
 
 <style lang="scss" scoped>

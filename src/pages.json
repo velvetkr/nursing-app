@@ -145,6 +145,22 @@
           "style": { "navigationBarTitleText": "选择护理人员" }
         },
         {
+          "path": "team/index",
+          "style": { "navigationBarTitleText": "团队管理" }
+        },
+        {
+          "path": "caregiver-detail/index",
+          "style": { "navigationBarTitleText": "护理人员详情" }
+        },
+        {
+          "path": "caregiver-invite/index",
+          "style": { "navigationBarTitleText": "邀请护理人员" }
+        },
+        {
+          "path": "member-invite/index",
+          "style": { "navigationBarTitleText": "邀请商户成员" }
+        },
+        {
           "path": "services/index",
           "style": { "navigationBarTitleText": "服务管理" }
         },

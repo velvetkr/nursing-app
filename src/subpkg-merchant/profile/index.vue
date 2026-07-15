@@ -13,7 +13,7 @@ import { requireRole } from '@/utils/permission.js'
 const userStore = useUserStore()
 const onboardingStore = useMerchantOnboardingStore()
 const profile = computed(() => onboardingStore.profile)
-const menus = [{ label: '切换身份', desc: '进入顾客或其他已开通工作台', icon: 'reload', url: '/pages/role-switch/role-switch' }, { label: '商户资料', desc: '主体资质与经营信息', icon: 'home', url: '/subpkg-merchant/apply/index' }, { label: '人员管理', desc: '护理人员和商户成员', icon: 'account', url: '' }, { label: '经营数据', desc: '订单和服务质量数据', icon: 'level', url: '' }, { label: '隐私与安全', desc: '账号与操作安全', icon: 'lock', url: '' }]
+const menus = [{ label: '切换身份', desc: '进入顾客或其他已开通工作台', icon: 'reload', url: '/pages/role-switch/role-switch' }, { label: '商户资料', desc: '主体资质与经营信息', icon: 'home', url: '/subpkg-merchant/apply/index' }, { label: '团队管理', desc: '护理人员合作与商户成员岗位', icon: 'account', url: '/subpkg-merchant/team/index' }, { label: '经营数据', desc: '订单和服务质量数据', icon: 'level', url: '' }, { label: '隐私与安全', desc: '账号与操作安全', icon: 'lock', url: '' }]
 onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await onboardingStore.fetchProfile() })
 function navigate(item) { if (item.url) uni.navigateTo({ url: item.url }); else uni.showToast({ title: `${item.label}将在后续版本开放`, icon: 'none' }) }
 function logout() { uni.showModal({ title: '退出登录', content: '确认退出当前商户账号吗？', success: ({ confirm }) => confirm && userStore.doLogout() }) }

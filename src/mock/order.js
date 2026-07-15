@@ -13,6 +13,7 @@
 import Mock from 'mockjs'
 import { getMockAddress } from './address.js'
 import { getMockServiceItem, getMockServiceSpec } from './service.js'
+import { getActiveMerchantCaregivers } from './merchant-team.js'
 import { getMockMerchantIdByUserId } from './user.js'
 import {
   ASSIGNMENT_STATUS,
@@ -28,31 +29,6 @@ const orders = []
 const prepayTokens = new Map() // prepayToken → { expireTime }
 let nextOrderId = 20001
 let nextAssignmentId = 60006
-
-const caregivers = [
-  {
-    caregiverId: 50001,
-    name: '王护理员',
-    phone: '138****8001',
-    avatar: '',
-    rating: 4.9,
-    completedOrders: 126,
-    distanceKm: 2.4,
-    skills: ['静脉采血', '艾灸调理', '日常起居照料'],
-    available: true,
-  },
-  {
-    caregiverId: 50002,
-    name: '李护理员',
-    phone: '138****8002',
-    avatar: '',
-    rating: 4.8,
-    completedOrders: 98,
-    distanceKm: 4.1,
-    skills: ['艾灸调理', '康复运动指导'],
-    available: true,
-  },
-]
 
 // 生成订单号
 function generateOrderNo() {
@@ -526,7 +502,19 @@ Mock.mock(/\/api\/v1\/merchants\/orders\/\d+\/candidates(?:\?|$)/, 'get', (optio
   if (order.orderStatus !== ORDER_STATUS.WAITING_DISPATCH) {
     return { code: 1007, message: '当前订单无需派单', data: null }
   }
-  return { code: 0, message: 'success', data: { list: caregivers.filter((item) => item.available) } }
+  const list = getActiveMerchantCaregivers(result.merchantId).map((item) => ({
+    caregiverId: item.caregiverId,
+    name: item.name,
+    phone: item.phone,
+    avatar: item.avatar,
+    rating: item.rating,
+    completedOrders: item.completedOrders,
+    distanceKm: item.caregiverId === 50001 ? 2.4 : 4.1,
+    skills: item.skills,
+    available: item.available,
+    relationId: item.relationId,
+  }))
+  return { code: 0, message: 'success', data: { list } }
 })
 
 // 9. 商户查询派单记录
@@ -542,13 +530,13 @@ function handleDispatch(options, isRedispatch = false) {
   const orderId = Number(options.url.match(/\/orders\/(\d+)\/(?:dispatch|redispatch)/)?.[1])
   const result = getMerchantOrder(options, orderId)
   if (result.error) return result.error
-  const { order } = result
+  const { order, merchantId } = result
   if (order.orderStatus !== ORDER_STATUS.WAITING_DISPATCH) {
     return { code: 1007, message: '当前订单不可派单', data: null }
   }
 
   const body = JSON.parse(options.body || '{}')
-  const caregiver = caregivers.find((item) => item.caregiverId === Number(body.caregiverId))
+  const caregiver = getActiveMerchantCaregivers(merchantId).find((item) => item.caregiverId === Number(body.caregiverId))
   if (!caregiver?.available) return { code: 5001, message: '护理人员当前不可接单', data: null }
 
   if (isRedispatch && order.currentAssignment) {
