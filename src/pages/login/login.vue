@@ -228,10 +228,12 @@ function handleRoleApply() {
     uni.navigateTo({ url: '/pages/register/register' })
     return
   }
+  if (selectedRole.value === ROLES.CAREGIVER) {
+    uni.navigateTo({ url: '/subpkg-caregiver/apply/index' })
+    return
+  }
   uni.showToast({
-    title: selectedRole.value === ROLES.CAREGIVER
-      ? '护理人员申请功能将在下一阶段开放'
-      : '商户入驻功能将在下一阶段开放',
+    title: '商户入驻功能将在下一阶段开放',
     icon: 'none',
   })
 }

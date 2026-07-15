@@ -45,6 +45,7 @@ const orderEntries = [
 ]
 const menus = [
   { label: '服务地址', desc: '管理上门服务地点', icon: 'map', url: '/pages/address/address-list' },
+  { label: '护理人员认证', desc: '提交身份、证书和服务能力资料', icon: 'server-man', url: '/subpkg-caregiver/apply/index' },
   { label: '投诉记录', desc: '查看问题处理进度', icon: 'chat', url: '/pages/complaint/complaint-list' },
   { label: '隐私与安全', desc: '账户保护与隐私说明', icon: 'lock', url: '' },
 ]

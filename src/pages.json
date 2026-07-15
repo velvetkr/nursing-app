@@ -87,6 +87,10 @@
       "name": "caregiver",
       "pages": [
         {
+          "path": "apply/index",
+          "style": { "navigationBarTitleText": "护理人员认证" }
+        },
+        {
           "path": "home/index",
           "style": { "navigationBarTitleText": "护理工作台" }
         },

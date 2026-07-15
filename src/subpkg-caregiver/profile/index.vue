@@ -1,9 +1,9 @@
 <template>
   <view class="page-shell">
     <view class="page-content">
-      <view class="profile-card"><view class="avatar"><u-icon name="server-man" size="38" color="#FFFFFF" /></view><view class="profile-copy"><text class="profile-name">{{ userStore.userInfo?.nickname || '护理人员' }}</text><text class="profile-id">护理人员编号 {{ userStore.userInfo?.caregiverId || '--' }}</text></view><text class="verified">已认证</text></view>
-      <view class="data-card"><view><text class="data-value">4.9</text><text class="data-label">综合评分</text></view><view><text class="data-value">126</text><text class="data-label">完成服务</text></view><view><text class="data-value">98%</text><text class="data-label">准时率</text></view></view>
-      <view class="menu-card"><view v-for="item in menus" :key="item.label" class="menu-row" @click="pending(item.label)"><view class="menu-icon"><u-icon :name="item.icon" size="21" color="#3A7BF7" /></view><view class="menu-copy"><text class="menu-title">{{ item.label }}</text><text class="menu-desc">{{ item.desc }}</text></view><u-icon name="arrow-right" size="15" color="#C5CDD8" /></view></view>
+      <view class="profile-card"><view class="avatar"><u-icon name="server-man" size="38" color="#FFFFFF" /></view><view class="profile-copy"><text class="profile-name">{{ profile?.realName || userStore.userInfo?.nickname || '护理人员' }}</text><text class="profile-id">护理人员编号 {{ profile?.caregiverId || userStore.userInfo?.caregiverId || '--' }}</text><text v-if="profile?.merchantName" class="profile-id">{{ profile.merchantName }}</text></view><text class="verified">已认证</text></view>
+      <view class="data-card"><view><text class="data-value">{{ profile?.rating ?? '--' }}</text><text class="data-label">综合评分</text></view><view><text class="data-value">{{ profile?.completedOrders ?? '--' }}</text><text class="data-label">完成服务</text></view><view><text class="data-value">{{ profile ? `${profile.punctualityRate}%` : '--' }}</text><text class="data-label">准时率</text></view></view>
+      <view class="menu-card"><view v-for="item in menus" :key="item.label" class="menu-row" @click="navigate(item)"><view class="menu-icon"><u-icon :name="item.icon" size="21" color="#3A7BF7" /></view><view class="menu-copy"><text class="menu-title">{{ item.label }}</text><text class="menu-desc">{{ item.desc }}</text></view><u-icon name="arrow-right" size="15" color="#C5CDD8" /></view></view>
       <u-button shape="round" class="logout-btn" @click="logout">退出当前账号</u-button>
     </view>
     <role-tab-bar :tabs="CAREGIVER_TABS" current="/subpkg-caregiver/profile/index" />
@@ -12,21 +12,24 @@
 
 <script setup>
 import { onShow } from '@dcloudio/uni-app'
+import { computed } from 'vue'
 import RoleTabBar from '@/components/base/role-tab-bar.vue'
 import { CAREGIVER_TABS } from '@/constants/caregiver-navigation.js'
 import { ROLES } from '@/constants/roles.js'
+import { useCaregiverStore } from '@/store/caregiver.js'
 import { useUserStore } from '@/store/user.js'
 import { requireRole } from '@/utils/permission.js'
 
 const userStore = useUserStore()
+const caregiverStore = useCaregiverStore()
+const profile = computed(() => caregiverStore.profile)
 const menus = [
-  { label: '个人资料', desc: '基础资料和联系方式', icon: 'account' },
-  { label: '资质证书', desc: '查看证书和有效期', icon: 'file-text' },
-  { label: '服务能力', desc: '可承接的护理项目', icon: 'grid' },
-  { label: '隐私与安全', desc: '账号保护和隐私设置', icon: 'lock' },
+  { label: '认证资料', desc: '基础资料、证书和服务能力', icon: 'account', url: '/subpkg-caregiver/apply/index' },
+  { label: '服务区域', desc: '查看当前可服务区域', icon: 'map', url: '/subpkg-caregiver/apply/index' },
+  { label: '隐私与安全', desc: '账号保护和隐私设置', icon: 'lock', url: '' },
 ]
-onShow(() => requireRole(ROLES.CAREGIVER))
-function pending(label) { uni.showToast({ title: `${label}将在后续版本开放`, icon: 'none' }) }
+onShow(async () => { if (!requireRole(ROLES.CAREGIVER)) return; await caregiverStore.fetchProfile() })
+function navigate(item) { if (item.url) uni.navigateTo({ url: item.url }); else uni.showToast({ title: `${item.label}将在后续版本开放`, icon: 'none' }) }
 function logout() { uni.showModal({ title: '退出登录', content: '确认退出当前护理人员账号吗？', success: ({ confirm }) => confirm && userStore.doLogout() }) }
 </script>
 
