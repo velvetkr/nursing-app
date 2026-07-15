@@ -47,4 +47,11 @@ describe('orderStore multi-state support', () => {
       idempotentKey: 'confirm-key',
     })
   })
+
+  it('取消订单使用专用幂等键', async () => {
+    http.post.mockResolvedValueOnce({ data: { refundStatus: 'PROCESSING' } })
+    const store = useOrderStore()
+    await store.cancelOrder(1, '计划有变')
+    expect(http.post).toHaveBeenCalledWith('/api/v1/orders/1/cancel', { cancelReason: '计划有变' }, { idempotentKey: 'cancel-key' })
+  })
 })

@@ -16,6 +16,7 @@ import './merchant-team.js'
 import './service.js'
 import './address.js'
 import './order.js'
+import './aftersales.js'
 import './review.js'
 import './complaint.js'
 

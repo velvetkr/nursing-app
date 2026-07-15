@@ -7,6 +7,7 @@
         <router-link to="/reviews/merchant"><el-icon><OfficeBuilding /></el-icon><span>商户审核</span><b v-if="counts.merchant">{{ counts.merchant }}</b></router-link>
         <router-link to="/reviews/caregiver"><el-icon><UserFilled /></el-icon><span>护理人员审核</span><b v-if="counts.caregiver">{{ counts.caregiver }}</b></router-link>
         <router-link to="/reviews/service"><el-icon><Management /></el-icon><span>服务审核</span><b v-if="counts.service">{{ counts.service }}</b></router-link>
+        <router-link to="/exceptions"><el-icon><WarningFilled /></el-icon><span>异常监管</span><b v-if="exceptionCount">{{ exceptionCount }}</b></router-link>
       </nav>
       <div class="side-footer"><span>当前为 Mock 演示环境</span><small>真实权限由后端校验</small></div>
     </aside>
@@ -20,7 +21,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { DataAnalysis, Management, OfficeBuilding, UserFilled } from '@element-plus/icons-vue'
+import { DataAnalysis, Management, OfficeBuilding, UserFilled, WarningFilled } from '@element-plus/icons-vue'
 import { useReviewStore } from '../stores/review.js'
 import { useSessionStore } from '../stores/session.js'
 
@@ -29,6 +30,7 @@ const router = useRouter()
 const reviewStore = useReviewStore()
 const session = useSessionStore()
 const counts = computed(() => reviewStore.dashboard?.pending || {})
+const exceptionCount = computed(() => reviewStore.dashboard?.exceptionCount || 0)
 onMounted(() => reviewStore.fetchDashboard())
 function handleCommand(command) { if (command === 'logout') { session.logout(); router.replace('/login') } }
 </script>

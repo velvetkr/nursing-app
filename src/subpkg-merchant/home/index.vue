@@ -3,7 +3,7 @@
     <view class="page-content">
       <view class="hero-card"><view><text class="eyebrow">商户工作台</text><text class="title">{{ dashboard?.merchantName || userStore.userInfo?.nickname || '商户' }}</text><text class="subtitle">订单调度与履约监控</text></view><view class="hero-icon"><u-icon name="home-fill" size="42" color="#FFFFFF" /></view></view>
 
-      <view class="alert-card" @click="goOrders('dispatch')"><view class="alert-icon"><u-icon name="bell-fill" size="24" color="#FF8A5C" /></view><view class="alert-copy"><text class="alert-title">{{ dashboard?.waitingDispatch || 0 }} 个订单等待派单</text><text class="alert-desc">及时安排护理人员，避免订单超时</text></view><u-icon name="arrow-right" size="16" color="#C5CDD8" /></view>
+      <view class="alert-card" @click="goExceptions"><view class="alert-icon"><u-icon name="bell-fill" size="24" color="#FF8A5C" /></view><view class="alert-copy"><text class="alert-title">{{ dashboard?.exceptionCount || dashboard?.waitingDispatch || 0 }} 个异常或待派单事项</text><text class="alert-desc">处理接单超时、无人可派和异常签到</text></view><u-icon name="arrow-right" size="16" color="#C5CDD8" /></view>
 
       <view class="stats-grid">
         <view class="stat-card" @click="goOrders('accept')"><text class="stat-value orange">{{ dashboard?.waitingAccept || 0 }}</text><text class="stat-label">待接单</text></view>
@@ -35,10 +35,11 @@ const merchantStore = useMerchantStore()
 const userStore = useUserStore()
 const dashboard = computed(() => merchantStore.dashboard)
 const tabs = computed(() => MERCHANT_TABS.map((tab) => tab.label === '订单' ? { ...tab, badge: dashboard.value?.waitingDispatch || '' } : tab))
-onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await merchantStore.fetchDashboard() })
+onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await Promise.all([merchantStore.fetchDashboard(), merchantStore.fetchExceptions()]); merchantStore.dashboard.exceptionCount = merchantStore.exceptions.filter((item) => !['RESOLVED','CLOSED'].includes(item.status)).length })
 function goOrders(filter) { uni.redirectTo({ url: `/subpkg-merchant/orders/index${filter ? `?filter=${filter}` : ''}` }) }
 function goServices() { uni.redirectTo({ url: '/subpkg-merchant/services/index' }) }
 function goTeam() { uni.navigateTo({ url: '/subpkg-merchant/team/index' }) }
+function goExceptions() { uni.navigateTo({ url: '/subpkg-merchant/exceptions/index' }) }
 </script>
 
 <style lang="scss" scoped>

@@ -10,6 +10,8 @@ const routes = [
       { path: 'dashboard', name: 'dashboard', component: () => import('../views/dashboard/index.vue'), meta: { title: '审核工作台' } },
       { path: 'reviews/:type', name: 'review-list', component: () => import('../views/reviews/index.vue'), meta: { title: '审核管理' } },
       { path: 'reviews/:type/:id', name: 'review-detail', component: () => import('../views/reviews/detail.vue'), meta: { title: '审核详情' } },
+      { path: 'exceptions', name: 'exception-list', component: () => import('../views/exceptions/index.vue'), meta: { title: '异常监管' } },
+      { path: 'exceptions/:id', name: 'exception-detail', component: () => import('../views/exceptions/detail.vue'), meta: { title: '异常详情' } },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' },

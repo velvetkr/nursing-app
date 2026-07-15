@@ -9,6 +9,7 @@ export const useMerchantStore = defineStore('merchant', () => {
   const currentOrder = ref(null)
   const total = ref(0)
   const loading = ref(false)
+  const exceptions = ref([])
 
   async function fetchDashboard() {
     const res = await http.get('/api/v1/merchants/dashboard')
@@ -45,14 +46,22 @@ export const useMerchantStore = defineStore('merchant', () => {
     }
   }
 
+  async function fetchExceptions(params = {}) {
+    const res = await http.get('/api/v1/merchant/exceptions', params)
+    exceptions.value = res.data?.list || []
+    return res.data
+  }
+
   return {
     dashboard,
     orders,
     currentOrder,
     total,
     loading,
+    exceptions,
     fetchDashboard,
     fetchOrders,
     fetchOrderDetail,
+    fetchExceptions,
   }
 })

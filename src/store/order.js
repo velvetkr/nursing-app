@@ -149,11 +149,18 @@ export const useOrderStore = defineStore('order', () => {
   async function cancelOrder(orderId, cancelReason) {
     const res = await http.post(`/api/v1/orders/${orderId}/cancel`, {
       cancelReason: cancelReason || '',
+    }, {
+      idempotentKey: createIdempotentKey('cancel'),
     })
     // 刷新详情
     if (currentOrder.value?.orderId === orderId) {
       await fetchOrderDetail(orderId)
     }
+    return res.data
+  }
+
+  async function fetchAftersales(orderId) {
+    const res = await http.get(`/api/v1/orders/${orderId}/aftersales`)
     return res.data
   }
 
@@ -189,6 +196,7 @@ export const useOrderStore = defineStore('order', () => {
     fetchOrders,
     fetchOrderDetail,
     cancelOrder,
+    fetchAftersales,
     getStatusText,
     getStatusMeta,
     getSlotText,

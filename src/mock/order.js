@@ -16,6 +16,15 @@ import { getMockServiceItem, getMockServiceSpec } from './service.js'
 import { getActiveMerchantCaregivers } from './merchant-team.js'
 import { getMockMerchantIdByUserId } from './user.js'
 import {
+  calculateCancellation,
+  createOrderException,
+  createRefundForCancellation,
+  expireAssignmentIfNeeded,
+  refreshRefund,
+  registerAbnormalCheckIn,
+} from './aftersales-state.js'
+import { EXCEPTION_TYPE } from '@/constants/aftersales-status.js'
+import {
   ASSIGNMENT_STATUS,
   ORDER_STATUS,
   PAYMENT_STATUS,
@@ -219,7 +228,7 @@ const presetOrders = [
       { assignmentId: 60005, caregiverId: 50001, caregiverName: '王护理员', status: ASSIGNMENT_STATUS.ACCEPTED, dispatchTime: '2026-07-09T11:10:00+08:00', acceptedTime: '2026-07-09T11:18:00+08:00' },
     ],
     serviceRecords: [
-      { recordId: '19995-1', action: 'CHECK_IN', content: '护理人员已到达并签到', distanceMeters: 28, createTime: '2026-07-15T08:50:00+08:00' },
+      { recordId: '19995-1', action: 'CHECK_IN', content: '护理人员提交异常签到，等待商户核验', abnormal: true, abnormalReason: '设备定位不可用', reviewStatus: 'PENDING', createTime: '2026-07-15T08:50:00+08:00' },
       { recordId: '19995-2', action: 'START', content: '护理服务已开始', createTime: '2026-07-15T09:00:00+08:00' },
     ],
     operationLogs: [
@@ -399,6 +408,9 @@ Mock.mock(/\/api\/v1\/orders\/\d+$/, 'get', (options) => {
     return { code: 3007, message: '订单不存在', data: null }
   }
 
+  expireAssignmentIfNeeded(order)
+  refreshRefund(order)
+
   // 返回快照版本（不含 _idempotentKey）
   const detail = { ...order }
   delete detail._idempotentKey
@@ -415,28 +427,22 @@ Mock.mock(/\/api\/v1\/orders\/\d+\/cancel/, 'post', (options) => {
     return { code: 3007, message: '订单不存在', data: null }
   }
 
-  if (![ORDER_STATUS.CREATED, ORDER_STATUS.WAITING_DISPATCH, ORDER_STATUS.WAITING_SERVICE].includes(order.orderStatus)) {
-    return { code: 3009, message: '当前状态不可取消', data: null }
-  }
-
   const body = options.body ? JSON.parse(options.body) : {}
-  const wasPaid = order.paymentStatus === PAYMENT_STATUS.PAID
+  const preview = calculateCancellation(order)
+  if (!preview.cancellable) return { code: 3009, message: preview.ruleDescription, data: null }
   order.cancelReason = body.cancelReason || ''
   if (order.currentAssignment) {
     order.currentAssignment.status = ASSIGNMENT_STATUS.CANCELED
     order.assignmentStatus = ASSIGNMENT_STATUS.CANCELED
   }
-  order.paymentStatus = wasPaid ? PAYMENT_STATUS.REFUNDING : PAYMENT_STATUS.UNPAID
+  order.paymentStatus = preview.refundAmount > 0 ? PAYMENT_STATUS.REFUNDING : PAYMENT_STATUS.UNPAID
   updateOrderStatus(order, ORDER_STATUS.CANCELED, 'cancel', body.cancelReason || '用户取消订单')
-
-  const refundStatus = wasPaid ? 'REFUNDING' : 'NO_REFUND'
-
-  console.log(`[Mock] 订单已取消: orderId=${orderId}, refundStatus=${refundStatus}`)
+  const refund = createRefundForCancellation(order, preview, body.cancelReason || '用户取消订单')
 
   return {
     code: 0,
     message: '订单已取消',
-    data: { orderId: order.orderId, status: order.status, refundStatus },
+    data: { orderId: order.orderId, status: order.status, refundStatus: refund.status, refund },
   }
 })
 
@@ -514,6 +520,7 @@ Mock.mock(/\/api\/v1\/merchants\/orders\/\d+\/candidates(?:\?|$)/, 'get', (optio
     available: item.available,
     relationId: item.relationId,
   }))
+  if (!list.length) createOrderException(order, EXCEPTION_TYPE.NO_CAREGIVER, '当前团队没有满足条件且可接单的护理人员，请调整排班、邀请人员或联系顾客改期。')
   return { code: 0, message: 'success', data: { list } }
 })
 
@@ -602,6 +609,7 @@ Mock.mock(/\/api\/v1\/merchants\/orders(?:\?|$)/, 'get', (options) => {
   const page = Number(getQueryParam(options.url, 'page') || 1)
   const size = Math.min(Number(getQueryParam(options.url, 'size') || 20), 50)
   let list = orders.filter((order) => order.merchantId === merchantId)
+  list.forEach(expireAssignmentIfNeeded)
   if (orderStatus) list = list.filter((order) => order.orderStatus === orderStatus)
   if (assignmentStatus) list = list.filter((order) => order.assignmentStatus === assignmentStatus)
   if (keyword) {
@@ -686,8 +694,13 @@ Mock.mock(/\/api\/v1\/caregivers\/orders\/\d+\/(depart|check-in|start|finish)/, 
   if (action === 'check-in') {
     if (order.orderStatus !== ORDER_STATUS.WAITING_SERVICE) return { code: 1007, message: '当前不可签到', data: null }
     const record = appendServiceRecord(order, 'CHECK_IN', '护理人员已到达并签到', body)
-    order.operationLogs.push(createOperationLog('check-in', '护理人员已到达并签到', record.createTime, order.orderStatus, order.orderStatus))
-    return { code: 0, message: '签到成功', data: record }
+    if (body.abnormal) {
+      record.content = '护理人员提交异常签到，等待商户核验'
+      record.reviewStatus = 'PENDING'
+      registerAbnormalCheckIn(order, body)
+    }
+    order.operationLogs.push(createOperationLog('check-in', record.content, record.createTime, order.orderStatus, order.orderStatus))
+    return { code: 0, message: body.abnormal ? '异常签到已提交审核' : '签到成功', data: record }
   }
   if (action === 'start') {
     if (order.orderStatus !== ORDER_STATUS.WAITING_SERVICE) return { code: 1007, message: '当前不可开始服务', data: null }
