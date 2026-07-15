@@ -1,0 +1,27 @@
+import { createRouter, createWebHistory } from 'vue-router'
+
+const routes = [
+  { path: '/login', name: 'login', component: () => import('../views/login/index.vue'), meta: { public: true } },
+  {
+    path: '/',
+    component: () => import('../layouts/admin-layout.vue'),
+    redirect: '/dashboard',
+    children: [
+      { path: 'dashboard', name: 'dashboard', component: () => import('../views/dashboard/index.vue'), meta: { title: '审核工作台' } },
+      { path: 'reviews/:type', name: 'review-list', component: () => import('../views/reviews/index.vue'), meta: { title: '审核管理' } },
+      { path: 'reviews/:type/:id', name: 'review-detail', component: () => import('../views/reviews/detail.vue'), meta: { title: '审核详情' } },
+    ],
+  },
+  { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
+]
+
+const router = createRouter({ history: createWebHistory(), routes })
+
+router.beforeEach((to) => {
+  const token = localStorage.getItem('adminToken')
+  if (!to.meta.public && !token) return { name: 'login', query: { redirect: to.fullPath } }
+  if (to.name === 'login' && token) return { name: 'dashboard' }
+  return true
+})
+
+export default router
