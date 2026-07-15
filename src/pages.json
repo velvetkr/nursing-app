@@ -121,6 +121,10 @@
       "name": "merchant",
       "pages": [
         {
+          "path": "apply/index",
+          "style": { "navigationBarTitleText": "商户入驻" }
+        },
+        {
           "path": "home/index",
           "style": { "navigationBarTitleText": "商户工作台" }
         },

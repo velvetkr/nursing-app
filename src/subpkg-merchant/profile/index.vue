@@ -1,17 +1,21 @@
 <template>
-  <view class="page-shell"><view class="page-content"><view class="profile-card"><view class="logo"><u-icon name="home-fill" size="37" color="#FFFFFF" /></view><view class="profile-copy"><text class="merchant-name">{{ userStore.userInfo?.nickname || '商户' }}</text><text class="merchant-id">商户编号 {{ userStore.userInfo?.merchantId || '--' }}</text></view><text class="verified">已认证</text></view><view class="menu-card"><view v-for="item in menus" :key="item.label" class="menu-row" @click="pending(item.label)"><view class="menu-icon"><u-icon :name="item.icon" size="21" color="#3A7BF7" /></view><view class="menu-copy"><text class="menu-title">{{ item.label }}</text><text class="menu-desc">{{ item.desc }}</text></view><u-icon name="arrow-right" size="15" color="#C5CDD8" /></view></view><u-button shape="round" class="logout-btn" @click="logout">退出当前账号</u-button></view><role-tab-bar :tabs="MERCHANT_TABS" current="/subpkg-merchant/profile/index" /></view>
+  <view class="page-shell"><view class="page-content"><view class="profile-card"><view class="logo"><u-icon name="home-fill" size="37" color="#FFFFFF" /></view><view class="profile-copy"><text class="merchant-name">{{ profile?.merchantName || userStore.userInfo?.nickname || '商户' }}</text><text class="merchant-id">商户编号 {{ profile?.merchantId || userStore.userInfo?.merchantId || '--' }}</text><text v-if="profile?.contactName" class="merchant-id">负责人 {{ profile.contactName }}</text></view><text class="verified">已认证</text></view><view class="menu-card"><view v-for="item in menus" :key="item.label" class="menu-row" @click="navigate(item)"><view class="menu-icon"><u-icon :name="item.icon" size="21" color="#3A7BF7" /></view><view class="menu-copy"><text class="menu-title">{{ item.label }}</text><text class="menu-desc">{{ item.desc }}</text></view><u-icon name="arrow-right" size="15" color="#C5CDD8" /></view></view><u-button shape="round" class="logout-btn" @click="logout">退出当前账号</u-button></view><role-tab-bar :tabs="MERCHANT_TABS" current="/subpkg-merchant/profile/index" /></view>
 </template>
 <script setup>
 import { onShow } from '@dcloudio/uni-app'
+import { computed } from 'vue'
 import RoleTabBar from '@/components/base/role-tab-bar.vue'
 import { MERCHANT_TABS } from '@/constants/merchant-navigation.js'
 import { ROLES } from '@/constants/roles.js'
+import { useMerchantOnboardingStore } from '@/store/merchant-onboarding.js'
 import { useUserStore } from '@/store/user.js'
 import { requireRole } from '@/utils/permission.js'
 const userStore = useUserStore()
-const menus = [{ label: '商户资料', desc: '主体资质与经营信息', icon: 'home' }, { label: '人员管理', desc: '护理人员和商户成员', icon: 'account' }, { label: '经营数据', desc: '订单和服务质量数据', icon: 'level' }, { label: '隐私与安全', desc: '账号与操作安全', icon: 'lock' }]
-onShow(() => requireRole(ROLES.MERCHANT_MEMBER))
-function pending(label) { uni.showToast({ title: `${label}将在后续版本开放`, icon: 'none' }) }
+const onboardingStore = useMerchantOnboardingStore()
+const profile = computed(() => onboardingStore.profile)
+const menus = [{ label: '商户资料', desc: '主体资质与经营信息', icon: 'home', url: '/subpkg-merchant/apply/index' }, { label: '人员管理', desc: '护理人员和商户成员', icon: 'account', url: '' }, { label: '经营数据', desc: '订单和服务质量数据', icon: 'level', url: '' }, { label: '隐私与安全', desc: '账号与操作安全', icon: 'lock', url: '' }]
+onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await onboardingStore.fetchProfile() })
+function navigate(item) { if (item.url) uni.navigateTo({ url: item.url }); else uni.showToast({ title: `${item.label}将在后续版本开放`, icon: 'none' }) }
 function logout() { uni.showModal({ title: '退出登录', content: '确认退出当前商户账号吗？', success: ({ confirm }) => confirm && userStore.doLogout() }) }
 </script>
 <style lang="scss" scoped>

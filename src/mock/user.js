@@ -102,6 +102,21 @@ users.set('13800138003', {
   roles: [ROLES.CUSTOMER],
 })
 
+users.set('13800138004', {
+  userId: 10005,
+  phone: '13800138004',
+  password: '123456',
+  nickname: '商户申请人',
+  avatar: '',
+  gender: 1,
+  idCard: null,
+  status: 0,
+  lastLoginTime: '2026-07-01T10:00:00+08:00',
+  createTime: '2026-07-01T08:00:00+08:00',
+  version: 0,
+  roles: [ROLES.CUSTOMER],
+})
+
 // ========== 工具函数 ==========
 
 function generateToken(userId, role = ROLES.CUSTOMER) {
@@ -149,7 +164,12 @@ export function grantMockUserRole(userId, role, relatedId = null) {
   if (!user) return null
   if (!user.roles.includes(role)) user.roles.push(role)
   if (role === ROLES.CAREGIVER && relatedId) user.caregiverId = relatedId
+  if (role === ROLES.MERCHANT_MEMBER && relatedId) user.merchantId = relatedId
   return user
+}
+
+export function getMockMerchantIdByUserId(userId) {
+  return findMockUserById(userId)?.merchantId || null
 }
 
 // 7天后过期

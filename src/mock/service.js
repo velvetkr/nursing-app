@@ -10,6 +10,7 @@
  * 核心变化：每个服务挂多个规格(specs)，价格在规格上
  */
 import Mock from 'mockjs'
+import { getMockMerchantIdByUserId } from './user.js'
 import {
   SERVICE_AUDIT_STATUS,
   SERVICE_PUBLISH_STATUS,
@@ -298,7 +299,7 @@ function buildDetail(item) {
 function getMerchantIdFromRequest(options) {
   const auth = options.headers?.Authorization || options.headers?.authorization || ''
   const userId = Number(auth.match(/mock_jwt_(\d+)_MERCHANT_MEMBER_/)?.[1])
-  return ({ 10003: 20001 })[userId] || null
+  return getMockMerchantIdByUserId(userId)
 }
 
 function getManagedService(options, itemId) {

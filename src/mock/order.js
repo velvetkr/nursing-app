@@ -13,6 +13,7 @@
 import Mock from 'mockjs'
 import { getMockAddress } from './address.js'
 import { getMockServiceItem, getMockServiceSpec } from './service.js'
+import { getMockMerchantIdByUserId } from './user.js'
 import {
   ASSIGNMENT_STATUS,
   ORDER_STATUS,
@@ -111,7 +112,7 @@ function getCaregiverIdFromRequest(options) {
 function getMerchantIdFromRequest(options) {
   const auth = options.headers?.Authorization || options.headers?.authorization || ''
   const userId = Number(auth.match(/mock_jwt_(\d+)_MERCHANT_MEMBER_/)?.[1])
-  return ({ 10003: 20001 })[userId] || null
+  return getMockMerchantIdByUserId(userId)
 }
 
 function getMerchantOrder(options, orderId) {

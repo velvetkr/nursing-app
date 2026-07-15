@@ -11,6 +11,7 @@
 import Mock from 'mockjs'
 import './user.js'
 import './caregiver.js'
+import './merchant-onboarding.js'
 import './service.js'
 import './address.js'
 import './order.js'

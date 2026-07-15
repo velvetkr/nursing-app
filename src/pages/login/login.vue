@@ -232,10 +232,7 @@ function handleRoleApply() {
     uni.navigateTo({ url: '/subpkg-caregiver/apply/index' })
     return
   }
-  uni.showToast({
-    title: '商户入驻功能将在下一阶段开放',
-    icon: 'none',
-  })
+  uni.navigateTo({ url: '/subpkg-merchant/apply/index' })
 }
 </script>
 
