@@ -211,10 +211,12 @@ export function canCustomerReview(order) {
 }
 
 export function canCustomerComplain(order) {
+  const normalized = normalizeOrderState(order)
+  if (normalized.complaintId || normalized.orderStatus === ORDER_STATUS.DISPUTED) return false
   return [
     ORDER_STATUS.WAITING_SERVICE,
     ORDER_STATUS.IN_SERVICE,
     ORDER_STATUS.WAITING_CONFIRM,
     ORDER_STATUS.COMPLETED,
-  ].includes(normalizeOrderState(order).orderStatus)
+  ].includes(normalized.orderStatus)
 }

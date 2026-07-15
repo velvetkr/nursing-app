@@ -5,6 +5,7 @@ import {
   PAYMENT_STATUS,
   canCustomerCancel,
   canCustomerConfirm,
+  canCustomerComplain,
   canCustomerPay,
   canCustomerReview,
   canTransitionOrderStatus,
@@ -44,5 +45,7 @@ describe('order status model', () => {
     expect(canCustomerConfirm({ orderStatus: ORDER_STATUS.WAITING_CONFIRM })).toBe(true)
     expect(canCustomerReview({ orderStatus: ORDER_STATUS.WAITING_CONFIRM })).toBe(false)
     expect(canCustomerReview({ orderStatus: ORDER_STATUS.COMPLETED })).toBe(true)
+    expect(canCustomerComplain({ orderStatus: ORDER_STATUS.COMPLETED })).toBe(true)
+    expect(canCustomerComplain({ orderStatus: ORDER_STATUS.DISPUTED, complaintId: 40001 })).toBe(false)
   })
 })

@@ -43,7 +43,7 @@ export function expireAssignmentIfNeeded(order) {
 }
 
 export function createRefundForCancellation(order, preview, reason) {
-  const refund = { refundId: `RF${order.orderId}${Date.now()}`, orderId: order.orderId, status: preview.refundStatus === REFUND_STATUS.NOT_REQUIRED ? REFUND_STATUS.NOT_REQUIRED : REFUND_STATUS.PROCESSING, totalAmount: Number(order.totalAmount), refundAmount: preview.refundAmount, deductionAmount: preview.deductionAmount, reason, applyTime: now(), successTime: null, records: [{ action: 'APPLY', title: preview.refundStatus === REFUND_STATUS.NOT_REQUIRED ? '订单取消，无需退款' : '退款申请已提交', remark: preview.ruleDescription, time: now() }] }
+  const refund = { refundId: `RF${order.orderId}${Date.now()}`, orderId: order.orderId, status: preview.refundStatus === REFUND_STATUS.NOT_REQUIRED ? REFUND_STATUS.NOT_REQUIRED : REFUND_STATUS.PROCESSING, totalAmount: Number(order.totalAmount), refundAmount: preview.refundAmount, deductionAmount: preview.deductionAmount, reason, applyTime: now(), successTime: null, finalPaymentStatus: preview.refundAmount < Number(order.totalAmount) ? PAYMENT_STATUS.PARTIALLY_REFUNDED : PAYMENT_STATUS.REFUNDED, records: [{ action: 'APPLY', title: preview.refundStatus === REFUND_STATUS.NOT_REQUIRED ? '订单取消，无需退款' : '退款申请已提交', remark: preview.ruleDescription, time: now() }] }
   if (preview.refundStatus !== REFUND_STATUS.NOT_REQUIRED) refund.mockCompleteAt = Date.now() + 8000
   refunds.set(order.orderId, refund); order.refund = refund; return refund
 }
@@ -51,5 +51,5 @@ export function createRefundForCancellation(order, preview, reason) {
 export function refreshRefund(order) {
   const refund = refunds.get(order.orderId)
   if (!refund || refund.status !== REFUND_STATUS.PROCESSING || Date.now() < refund.mockCompleteAt) return
-  refund.status = REFUND_STATUS.SUCCESS; refund.successTime = now(); refund.records.unshift({ action: 'SUCCESS', title: '退款成功', remark: `¥${refund.refundAmount} 已原路退回`, time: refund.successTime }); delete refund.mockCompleteAt; order.paymentStatus = PAYMENT_STATUS.REFUNDED; order.status = deriveLegacyStatus(order.orderStatus, order.paymentStatus)
+  refund.status = REFUND_STATUS.SUCCESS; refund.successTime = now(); refund.records.unshift({ action: 'SUCCESS', title: '退款成功', remark: `¥${refund.refundAmount} 已原路退回`, time: refund.successTime }); delete refund.mockCompleteAt; order.paymentStatus = refund.finalPaymentStatus || PAYMENT_STATUS.REFUNDED; order.status = deriveLegacyStatus(order.orderStatus, order.paymentStatus)
 }

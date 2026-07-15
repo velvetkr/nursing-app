@@ -12,6 +12,8 @@ const routes = [
       { path: 'reviews/:type/:id', name: 'review-detail', component: () => import('../views/reviews/detail.vue'), meta: { title: '审核详情' } },
       { path: 'exceptions', name: 'exception-list', component: () => import('../views/exceptions/index.vue'), meta: { title: '异常监管' } },
       { path: 'exceptions/:id', name: 'exception-detail', component: () => import('../views/exceptions/detail.vue'), meta: { title: '异常详情' } },
+      { path: 'complaints', name: 'complaint-list', component: () => import('../views/complaints/index.vue'), meta: { title: '投诉仲裁' } },
+      { path: 'complaints/:id', name: 'complaint-detail', component: () => import('../views/complaints/detail.vue'), meta: { title: '仲裁详情' } },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' },

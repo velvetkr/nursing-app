@@ -153,6 +153,14 @@
           "style": { "navigationBarTitleText": "异常处理" }
         },
         {
+          "path": "complaints/index",
+          "style": { "navigationBarTitleText": "投诉协同" }
+        },
+        {
+          "path": "complaint-detail/index",
+          "style": { "navigationBarTitleText": "投诉处理" }
+        },
+        {
           "path": "dispatch/index",
           "style": { "navigationBarTitleText": "选择护理人员" }
         },

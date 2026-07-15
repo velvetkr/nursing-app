@@ -9,12 +9,15 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import http, { createIdempotentKey } from '@/utils/request.js'
+import { COMPLAINT_STATUS, getComplaintStatusMeta } from '@/constants/complaint-status.js'
 
 export const useComplaintStore = defineStore('complaint', () => {
   // ===== 状态 =====
   const complaints = ref([])
   const total = ref(0)
   const currentTracks = ref(null)
+  const merchantComplaints = ref([])
+  const currentMerchantComplaint = ref(null)
   const loading = ref(false)
 
   // ===== 类型映射 =====
@@ -26,10 +29,11 @@ export const useComplaintStore = defineStore('complaint', () => {
   ]
 
   const STATUS_MAP = {
-    0: '待处理',
-    1: '处理中',
-    2: '已处理',
+    0: '待商户响应',
+    1: '商户处理中',
+    2: '已裁决',
     3: '已关闭',
+    4: '平台仲裁中',
   }
 
   // ===== 方法 =====
@@ -86,19 +90,50 @@ export const useComplaintStore = defineStore('complaint', () => {
 
   /** 获取状态文案 */
   function getStatusText(status) {
-    return STATUS_MAP[status] || '未知'
+    return getComplaintStatusMeta(status).label
+  }
+
+  async function fetchMerchantComplaints(params = {}) {
+    loading.value = true
+    try {
+      const res = await http.get('/api/v1/merchant/complaints', params)
+      merchantComplaints.value = res.data?.list || []
+      return res.data
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchMerchantComplaintDetail(complaintId) {
+    const res = await http.get(`/api/v1/merchant/complaints/${complaintId}`)
+    currentMerchantComplaint.value = res.data
+    return currentMerchantComplaint.value
+  }
+
+  async function processMerchantComplaint(complaintId, action, payload) {
+    const res = await http.post(`/api/v1/merchant/complaints/${complaintId}/${action}`, payload, {
+      idempotentKey: createIdempotentKey(`merchant-complaint-${action}`),
+    })
+    currentMerchantComplaint.value = res.data
+    return currentMerchantComplaint.value
   }
 
   return {
     complaints,
     total,
     currentTracks,
+    merchantComplaints,
+    currentMerchantComplaint,
     loading,
     TYPE_OPTIONS,
     STATUS_MAP,
+    COMPLAINT_STATUS,
     submitComplaint,
     fetchComplaints,
     fetchComplaintTracks,
+    fetchMerchantComplaints,
+    fetchMerchantComplaintDetail,
+    processMerchantComplaint,
     getStatusText,
   }
 })
