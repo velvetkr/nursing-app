@@ -14,6 +14,13 @@ const complaintCases = [
   { complaintId: 40001, complaintNo: 'CP202607040001', orderId: 20000, orderNo: '2026070120000', serviceItemName: '静脉采血', totalAmount: 80, type: 1, typeText: '服务质量', status: 2, content: '护士上门时间比预约晚了将近一小时，而且操作不太规范。', merchantName: '康宁护理中心', merchantStatement: '护理人员因上一单延时到达，商户已完成内部核查。', customerEvidence: [], merchantEvidence: [{ name: '护理人员说明', value: '上一单服务延长导致迟到约45分钟' }], decision: { action: 'PARTIAL_REFUND', label: '部分退款', refundAmount: 20, remark: '迟到属实，退还部分服务费并要求商户整改。' }, createTime: '2026-07-04 14:00', updateTime: '2026-07-04 16:00', tracks: [{ trackId: 3, operator: '平台仲裁员', content: '裁定退还20元并要求商户整改。', createTime: '2026-07-04 16:00' }] },
 ]
 
+const adminNotifications = [
+  { notificationId: 81001, category: 'COMPLAINT', title: '投诉等待平台仲裁', content: '静脉采血收费争议已由商户提交双方材料，请核验并作出裁决。', read: false, createTime: '2026-07-15 13:20', targetPath: '/complaints/40002' },
+  { notificationId: 81002, category: 'EXCEPTION', title: '异常签到需要平台复核', content: '商户驳回压疮护理异常签到，请核验护理人员提交信息。', read: false, createTime: '2026-07-15 09:10', targetPath: '/exceptions/95002' },
+  { notificationId: 81003, category: 'REVIEW', title: '新的商户入驻申请', content: '安心到家护理服务中心已提交主体和经营资质资料。', read: false, createTime: '2026-07-15 09:10', targetPath: '/reviews/merchant/90002' },
+  { notificationId: 81004, category: 'REVIEW', title: '新的护理人员认证申请', content: '刘佳宁已提交身份、技能和证书资料。', read: true, readTime: '2026-07-15 09:00', createTime: '2026-07-15 08:30', targetPath: '/reviews/caregiver/80005' },
+]
+
 const reviewData = {
   merchant: [
     createReview(90002, 'merchant', '安心到家护理服务中心', '商户申请人', 'MR202607130002', '企业主体及经营资质入驻申请', '2026-07-15 09:10', [
@@ -52,5 +59,9 @@ Mock.mock(/\/api\/v1\/admin\/exceptions\/\d+\/(resolve|approve-refund)$/, 'post'
 Mock.mock(/\/api\/v1\/admin\/complaints(?:\?|$)/, 'get', (options) => { const url = new URL(options.url, 'http://mock.local'); const status = url.searchParams.get('status'); const list = status === null || status === '' ? complaintCases : complaintCases.filter((item) => item.status === Number(status)); return { code: 0, message: 'success', data: { list, total: list.length } } })
 Mock.mock(/\/api\/v1\/admin\/complaints\/\d+$/, 'get', (options) => { const item = complaintCases.find((entry) => entry.complaintId === Number(options.url.match(/complaints\/(\d+)$/)?.[1])); return item ? { code: 0, message: 'success', data: item } : { code: 4006, message: '投诉记录不存在', data: null } })
 Mock.mock(/\/api\/v1\/admin\/complaints\/\d+\/arbitrate$/, 'post', (options) => { const item = complaintCases.find((entry) => entry.complaintId === Number(options.url.match(/complaints\/(\d+)/)?.[1])); if (!item) return { code: 4006, message: '投诉记录不存在', data: null }; if (item.status !== 4) return { code: 1006, message: '该投诉已处理', data: null }; const body = JSON.parse(options.body || '{}'); const label = body.decision === 'FULL_REFUND' ? '全额退款' : body.decision === 'PARTIAL_REFUND' ? '部分退款' : '不予退款'; item.status = 2; item.updateTime = new Date().toLocaleString('zh-CN', { hour12: false }).replaceAll('/', '-'); item.decision = { action: body.decision, label, refundAmount: Number(body.refundAmount || 0), remark: body.remark }; item.tracks.unshift({ trackId: Date.now(), operator: adminUser.name, content: `${label}：${body.remark}`, createTime: item.updateTime }); return { code: 0, message: '仲裁完成', data: item } })
+Mock.mock(/\/api\/v1\/admin\/notifications\/unread-count$/, 'get', () => ({ code: 0, message: 'success', data: { unreadCount: adminNotifications.filter((item) => !item.read).length } }))
+Mock.mock(/\/api\/v1\/admin\/notifications(?:\?|$)/, 'get', (options) => { const url = new URL(options.url, 'http://mock.local'); const category = url.searchParams.get('category'); const unreadOnly = url.searchParams.get('unreadOnly') === 'true'; let list = adminNotifications; if (category) list = list.filter((item) => item.category === category); if (unreadOnly) list = list.filter((item) => !item.read); return { code: 0, message: 'success', data: { list, total: list.length, unreadCount: adminNotifications.filter((item) => !item.read).length } } })
+Mock.mock(/\/api\/v1\/admin\/notifications\/\d+\/read$/, 'patch', (options) => { const item = adminNotifications.find((entry) => entry.notificationId === Number(options.url.match(/notifications\/(\d+)/)?.[1])); if (!item) return { code: 9201, message: '消息不存在', data: null }; item.read = true; item.readTime = new Date().toLocaleString('zh-CN', { hour12: false }).replaceAll('/', '-'); return { code: 0, message: '已读', data: item } })
+Mock.mock(/\/api\/v1\/admin\/notifications\/read-all$/, 'patch', () => { adminNotifications.forEach((item) => { item.read = true }); return { code: 0, message: '全部已读', data: { unreadCount: 0 } } })
 
 console.log('[Admin Mock] 管理端审核数据已启用')

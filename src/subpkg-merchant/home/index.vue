@@ -1,7 +1,7 @@
 <template>
   <view class="page-shell">
     <view class="page-content">
-      <view class="hero-card"><view><text class="eyebrow">商户工作台</text><text class="title">{{ dashboard?.merchantName || userStore.userInfo?.nickname || '商户' }}</text><text class="subtitle">订单调度与履约监控</text></view><view class="hero-icon"><u-icon name="home-fill" size="42" color="#FFFFFF" /></view></view>
+      <view class="hero-card"><view><text class="eyebrow">商户工作台</text><text class="title">{{ dashboard?.merchantName || userStore.userInfo?.nickname || '商户' }}</text><text class="subtitle">订单调度与履约监控</text></view><view class="hero-icon" @click="goNotifications"><u-icon name="bell-fill" size="35" color="#FFFFFF" /><text v-if="notificationStore.unreadCount" class="hero-badge">{{ notificationStore.unreadCount }}</text></view></view>
 
       <view class="alert-card" @click="goExceptions"><view class="alert-icon"><u-icon name="bell-fill" size="24" color="#FF8A5C" /></view><view class="alert-copy"><text class="alert-title">{{ dashboard?.exceptionCount || dashboard?.waitingDispatch || 0 }} 个异常或待派单事项</text><text class="alert-desc">处理接单超时、无人可派和异常签到</text></view><u-icon name="arrow-right" size="16" color="#C5CDD8" /></view>
 
@@ -28,23 +28,26 @@ import RoleTabBar from '@/components/base/role-tab-bar.vue'
 import { MERCHANT_TABS } from '@/constants/merchant-navigation.js'
 import { ROLES } from '@/constants/roles.js'
 import { useMerchantStore } from '@/store/merchant.js'
+import { useNotificationStore } from '@/store/notification.js'
 import { useUserStore } from '@/store/user.js'
 import { requireRole } from '@/utils/permission.js'
 
 const merchantStore = useMerchantStore()
+const notificationStore = useNotificationStore()
 const userStore = useUserStore()
 const dashboard = computed(() => merchantStore.dashboard)
-const tabs = computed(() => MERCHANT_TABS.map((tab) => tab.label === '订单' ? { ...tab, badge: dashboard.value?.waitingDispatch || '' } : tab))
-onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await Promise.all([merchantStore.fetchDashboard(), merchantStore.fetchExceptions()]); merchantStore.dashboard.exceptionCount = merchantStore.exceptions.filter((item) => !['RESOLVED','CLOSED'].includes(item.status)).length })
+const tabs = computed(() => MERCHANT_TABS.map((tab) => tab.label === '订单' ? { ...tab, badge: dashboard.value?.waitingDispatch || '' } : tab.label === '我的' ? { ...tab, badge: notificationStore.unreadCount || '' } : tab))
+onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await Promise.all([merchantStore.fetchDashboard(), merchantStore.fetchExceptions(), notificationStore.fetchUnreadCount()]); merchantStore.dashboard.exceptionCount = merchantStore.exceptions.filter((item) => !['RESOLVED','CLOSED'].includes(item.status)).length })
 function goOrders(filter) { uni.redirectTo({ url: `/subpkg-merchant/orders/index${filter ? `?filter=${filter}` : ''}` }) }
 function goServices() { uni.redirectTo({ url: '/subpkg-merchant/services/index' }) }
 function goTeam() { uni.navigateTo({ url: '/subpkg-merchant/team/index' }) }
 function goExceptions() { uni.navigateTo({ url: '/subpkg-merchant/exceptions/index' }) }
 function goComplaints() { uni.navigateTo({ url: '/subpkg-merchant/complaints/index' }) }
+function goNotifications() { uni.navigateTo({ url: '/pages/notification/notification-list' }) }
 </script>
 
 <style lang="scss" scoped>
-.page-shell { min-height: 100vh; background: $page-gradient; }.page-content { padding: 30rpx $spacing-base calc(140rpx + env(safe-area-inset-bottom)); }.hero-card { display: flex; align-items: center; justify-content: space-between; min-height: 230rpx; padding: 34rpx; border-radius: 34rpx; background: linear-gradient(135deg,#116b68,#00a89d 55%,#38c6b5); color: #fff; box-shadow: $shadow-float; }.eyebrow,.title,.subtitle { display: block; }.eyebrow { font-size: $font-size-sm; opacity: .78; }.title { margin-top: 12rpx; font-size: 38rpx; font-weight: 700; }.subtitle { margin-top: 12rpx; font-size: $font-size-xs; opacity: .82; }.hero-icon { display: flex; align-items: center; justify-content: center; width: 96rpx; height: 96rpx; border-radius: 30rpx; background: rgba(255,255,255,.18); }
+.page-shell { min-height: 100vh; background: $page-gradient; }.page-content { padding: 30rpx $spacing-base calc(140rpx + env(safe-area-inset-bottom)); }.hero-card { display: flex; align-items: center; justify-content: space-between; min-height: 230rpx; padding: 34rpx; border-radius: 34rpx; background: linear-gradient(135deg,#116b68,#00a89d 55%,#38c6b5); color: #fff; box-shadow: $shadow-float; }.eyebrow,.title,.subtitle { display: block; }.eyebrow { font-size: $font-size-sm; opacity: .78; }.title { margin-top: 12rpx; font-size: 38rpx; font-weight: 700; }.subtitle { margin-top: 12rpx; font-size: $font-size-xs; opacity: .82; }.hero-icon { position:relative;display:flex;align-items:center;justify-content:center;width:96rpx;height:96rpx;border-radius:30rpx;background:rgba(255,255,255,.18); }.hero-badge { position:absolute;right:-7rpx;top:-7rpx;min-width:31rpx;height:31rpx;padding:0 7rpx;border:3rpx solid #fff;border-radius:$radius-round;color:#fff;background:$error-color;font-size:17rpx;line-height:25rpx;text-align:center; }
 .alert-card { display: flex; align-items: center; gap: 16rpx; margin-top: 22rpx; padding: 22rpx; border-radius: 25rpx; background: #fff6ef; box-shadow: $shadow-sm; }.alert-icon { display: flex; align-items: center; justify-content: center; width: 62rpx; height: 62rpx; border-radius: 20rpx; background: #ffe9dc; }.alert-copy { flex: 1; }.alert-title,.alert-desc { display: block; }.alert-title { color: $text-color; font-size: $font-size-sm; font-weight: 600; }.alert-desc { margin-top: 5rpx; color: $text-color-hint; font-size: $font-size-xs; }
 .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16rpx; margin-top: 20rpx; }.stat-card { padding: 24rpx 10rpx; border: $glass-border-soft; border-radius: 24rpx; background: $surface-gradient; box-shadow: $shadow-sm; text-align: center; }.stat-value,.stat-label { display: block; }.stat-value { font-size: 38rpx; font-weight: 700; }.orange { color: $warning-color; }.blue { color: $primary-color; }.green { color: $success-color; }.stat-label { margin-top: 5rpx; color: $text-color-hint; font-size: $font-size-xs; }.section-head { margin: 31rpx 4rpx 17rpx; }.section-title { color: $text-color; font-size: $font-size-md; font-weight: 700; }
 .overview-card { display: grid; grid-template-columns: 1fr 1rpx 1fr 1rpx 1.25fr; align-items: center; padding: 27rpx 18rpx; border: $glass-border-soft; border-radius: 28rpx; background: $surface-gradient; box-shadow: $shadow-sm; text-align: center; }.divider { width: 1rpx; height: 58rpx; background: $divider-color; }.overview-label,.overview-value { display: block; }.overview-label { color: $text-color-hint; font-size: $font-size-xs; }.overview-value { margin-top: 8rpx; color: $text-color; font-size: 31rpx; font-weight: 700; }.overview-value.price { color: $warning-color; }

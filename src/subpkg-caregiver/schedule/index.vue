@@ -5,19 +5,22 @@
       <view class="schedule-card"><view v-for="day in days" :key="day.date" class="day-row"><view class="day-copy"><text class="day-name">{{ day.name }}</text><text class="day-date">{{ day.date }}</text></view><view class="slots"><text v-for="slot in day.slots" :key="slot" class="slot">{{ slot }}</text><text v-if="!day.slots.length" class="rest">休息</text></view></view></view>
       <view class="tip-card"><u-icon name="info-circle" size="20" color="#3A7BF7" /><text>调整排班、请假和接单上限将在后续版本开放。</text></view>
     </view>
-    <role-tab-bar :tabs="CAREGIVER_TABS" current="/subpkg-caregiver/schedule/index" />
+    <role-tab-bar :tabs="tabs" current="/subpkg-caregiver/schedule/index" />
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import RoleTabBar from '@/components/base/role-tab-bar.vue'
 import { CAREGIVER_TABS } from '@/constants/caregiver-navigation.js'
 import { ROLES } from '@/constants/roles.js'
 import { requireRole } from '@/utils/permission.js'
+import { useNotificationStore } from '@/store/notification.js'
 
 const available = ref(true)
+const notificationStore = useNotificationStore()
+const tabs = computed(() => CAREGIVER_TABS.map((tab) => tab.label === '我的' ? { ...tab, badge: notificationStore.unreadCount || '' } : tab))
 const days = [
   { name: '今天', date: '07-15', slots: ['上午', '下午'] },
   { name: '周三', date: '07-16', slots: ['上午'] },
@@ -25,7 +28,7 @@ const days = [
   { name: '周五', date: '07-18', slots: [] },
   { name: '周六', date: '07-19', slots: ['上午', '下午'] },
 ]
-onShow(() => requireRole(ROLES.CAREGIVER))
+onShow(() => { if (requireRole(ROLES.CAREGIVER)) notificationStore.fetchUnreadCount() })
 </script>
 
 <style lang="scss" scoped>

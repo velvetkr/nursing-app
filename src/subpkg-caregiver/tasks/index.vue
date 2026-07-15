@@ -33,9 +33,11 @@ import { CAREGIVER_TABS } from '@/constants/caregiver-navigation.js'
 import { ASSIGNMENT_STATUS, ORDER_STATUS, getOrderStatusMeta } from '@/constants/order-status.js'
 import { ROLES } from '@/constants/roles.js'
 import { useWorkOrderStore } from '@/store/work-order.js'
+import { useNotificationStore } from '@/store/notification.js'
 import { requireRole } from '@/utils/permission.js'
 
 const workOrderStore = useWorkOrderStore()
+const notificationStore = useNotificationStore()
 const activeFilter = ref('all')
 const filters = [
   { label: '全部', value: 'all' },
@@ -45,13 +47,13 @@ const filters = [
   { label: '已完成', value: 'completed' },
 ]
 const pendingCount = computed(() => workOrderStore.tasks.filter((task) => task.assignmentStatus === ASSIGNMENT_STATUS.WAITING_ACCEPT).length)
-const tabs = computed(() => CAREGIVER_TABS.map((tab) => tab.label === '任务' ? { ...tab, badge: pendingCount.value || '' } : tab))
+const tabs = computed(() => CAREGIVER_TABS.map((tab) => tab.label === '任务' ? { ...tab, badge: pendingCount.value || '' } : tab.label === '我的' ? { ...tab, badge: notificationStore.unreadCount || '' } : tab))
 const filteredTasks = computed(() => workOrderStore.tasks.filter((task) => matchesFilter(task, activeFilter.value)))
 
 onLoad((options) => { if (filters.some((item) => item.value === options.filter)) activeFilter.value = options.filter })
 onShow(async () => {
   if (!requireRole(ROLES.CAREGIVER)) return
-  await workOrderStore.fetchTasks()
+  await Promise.all([workOrderStore.fetchTasks(), notificationStore.fetchUnreadCount()])
 })
 
 function localDate() {

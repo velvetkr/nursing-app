@@ -8,8 +8,9 @@
         <text class="eyebrow">智慧护理 · 温暖到家</text>
         <text class="page-title">今天想为家人准备什么服务？</text>
       </view>
-      <view class="status-orb">
-        <u-icon name="heart-fill" size="22" color="#FFFFFF" />
+      <view class="status-orb" @click="goNotifications">
+        <u-icon name="bell-fill" size="22" color="#FFFFFF" />
+        <text v-if="notificationStore.unreadCount" class="notification-badge">{{ notificationStore.unreadCount > 9 ? '9+' : notificationStore.unreadCount }}</text>
       </view>
     </view>
 
@@ -108,13 +109,18 @@ import { onMounted, ref } from 'vue'
 import { useServiceStore } from '@/store/service.js'
 import ServiceCard from '@/components/base/service-card.vue'
 import EmptyState from '@/components/base/empty-state.vue'
+import { useNotificationStore } from '@/store/notification.js'
+import { useUserStore } from '@/store/user.js'
 
 const serviceStore = useServiceStore()
+const notificationStore = useNotificationStore()
+const userStore = useUserStore()
 const failedCategoryIds = ref(new Set())
 
 onMounted(async () => {
   await serviceStore.fetchCategories()
   await serviceStore.fetchServices()
+  if (userStore.isLoggedIn) await notificationStore.fetchUnreadCount()
 })
 
 function onCategoryClick(cat) {
@@ -137,6 +143,7 @@ function goService() {
 function goDetail(id) {
   uni.navigateTo({ url: `/pages/service-detail/service-detail?id=${id}` })
 }
+function goNotifications() { if (!userStore.isLoggedIn) return uni.navigateTo({ url: '/pages/login/login' }); uni.navigateTo({ url: '/pages/notification/notification-list' }) }
 </script>
 
 <style lang="scss" scoped>
@@ -167,7 +174,7 @@ function goDetail(id) {
 .home-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28rpx; }
 .eyebrow { display: block; color: $primary-color; font-size: $font-size-sm; font-weight: 600; letter-spacing: 1rpx; }
 .page-title { display: block; max-width: 580rpx; margin-top: 10rpx; color: $text-color; font-size: 38rpx; font-weight: 700; line-height: 1.35; }
-.status-orb { width: 76rpx; height: 76rpx; display: flex; align-items: center; justify-content: center; border-radius: 28rpx; background: $primary-gradient; box-shadow: $shadow-glow; }
+.status-orb { position:relative;width:76rpx;height:76rpx;display:flex;align-items:center;justify-content:center;border-radius:28rpx;background:$primary-gradient;box-shadow:$shadow-glow; }.notification-badge { position:absolute;right:-8rpx;top:-8rpx;min-width:31rpx;height:31rpx;padding:0 7rpx;border:3rpx solid #fff;border-radius:$radius-round;color:#fff;background:$error-color;font-size:17rpx;line-height:25rpx;text-align:center; }
 
 .search-bar { height: $touch-min; display: flex; align-items: center; padding: 0 18rpx; border: $glass-border-soft; border-radius: $radius-round; background: $glass-bg-strong; box-shadow: $shadow-sm; backdrop-filter: $glass-blur; }
 .search-icon { width: 54rpx; height: 54rpx; display: flex; align-items: center; justify-content: center; border-radius: 20rpx; background: $primary-bg; }

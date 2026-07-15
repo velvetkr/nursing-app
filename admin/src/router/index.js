@@ -14,6 +14,7 @@ const routes = [
       { path: 'exceptions/:id', name: 'exception-detail', component: () => import('../views/exceptions/detail.vue'), meta: { title: '异常详情' } },
       { path: 'complaints', name: 'complaint-list', component: () => import('../views/complaints/index.vue'), meta: { title: '投诉仲裁' } },
       { path: 'complaints/:id', name: 'complaint-detail', component: () => import('../views/complaints/detail.vue'), meta: { title: '仲裁详情' } },
+      { path: 'notifications', name: 'notification-list', component: () => import('../views/notifications/index.vue'), meta: { title: '平台消息' } },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' },

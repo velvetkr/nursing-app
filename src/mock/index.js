@@ -19,6 +19,7 @@ import './order.js'
 import './aftersales.js'
 import './review.js'
 import './complaint.js'
+import './notification.js'
 
 // 全局 Mock 配置
 Mock.setup({

@@ -19,7 +19,7 @@
         </view>
       </view>
     </view>
-    <role-tab-bar :tabs="MERCHANT_TABS" current="/subpkg-merchant/services/index" />
+    <role-tab-bar :tabs="tabs" current="/subpkg-merchant/services/index" />
   </view>
 </template>
 
@@ -32,9 +32,12 @@ import { MERCHANT_TABS } from '@/constants/merchant-navigation.js'
 import { ROLES } from '@/constants/roles.js'
 import { SERVICE_AUDIT_STATUS, SERVICE_PUBLISH_STATUS, getServiceAuditMeta } from '@/constants/service-status.js'
 import { useServiceManageStore } from '@/store/service-manage.js'
+import { useNotificationStore } from '@/store/notification.js'
 import { requireRole } from '@/utils/permission.js'
 
 const serviceManageStore = useServiceManageStore()
+const notificationStore = useNotificationStore()
+const tabs = computed(() => MERCHANT_TABS.map((tab) => tab.label === '我的' ? { ...tab, badge: notificationStore.unreadCount || '' } : tab))
 const activeFilter = ref('ALL')
 const statusSummary = computed(() => [
   { key: 'ALL', label: '全部', value: serviceManageStore.summary.total, tone: 'grey' },
@@ -44,7 +47,7 @@ const statusSummary = computed(() => [
 ])
 const filteredServices = computed(() => activeFilter.value === 'ALL' ? serviceManageStore.services : serviceManageStore.services.filter((service) => service.auditStatus === activeFilter.value))
 
-onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await serviceManageStore.fetchServices() })
+onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await Promise.all([serviceManageStore.fetchServices(), notificationStore.fetchUnreadCount()]) })
 function auditMeta(status) { return getServiceAuditMeta(status) }
 function createService() { uni.navigateTo({ url: '/subpkg-merchant/service-edit/index' }) }
 function goDetail(itemId) { uni.navigateTo({ url: `/subpkg-merchant/service-detail/index?id=${itemId}` }) }

@@ -19,16 +19,18 @@ import { MERCHANT_TABS } from '@/constants/merchant-navigation.js'
 import { ASSIGNMENT_STATUS, ORDER_STATUS, getOrderStatusMeta } from '@/constants/order-status.js'
 import { ROLES } from '@/constants/roles.js'
 import { useMerchantStore } from '@/store/merchant.js'
+import { useNotificationStore } from '@/store/notification.js'
 import { requireRole } from '@/utils/permission.js'
 
 const merchantStore = useMerchantStore()
+const notificationStore = useNotificationStore()
 const activeFilter = ref('all')
 const filters = [{ label: '全部', value: 'all' }, { label: '待派单', value: 'dispatch' }, { label: '待接单', value: 'accept' }, { label: '今日', value: 'today' }, { label: '待服务', value: 'service' }, { label: '服务中', value: 'active' }, { label: '已完成', value: 'completed' }]
 const waitingDispatchCount = computed(() => merchantStore.orders.filter(needsDispatch).length)
-const tabs = computed(() => MERCHANT_TABS.map((tab) => tab.label === '订单' ? { ...tab, badge: waitingDispatchCount.value || '' } : tab))
+const tabs = computed(() => MERCHANT_TABS.map((tab) => tab.label === '订单' ? { ...tab, badge: waitingDispatchCount.value || '' } : tab.label === '我的' ? { ...tab, badge: notificationStore.unreadCount || '' } : tab))
 const filteredOrders = computed(() => merchantStore.orders.filter((order) => matchesFilter(order, activeFilter.value)))
 onLoad((options) => { if (filters.some((item) => item.value === options.filter)) activeFilter.value = options.filter })
-onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await merchantStore.fetchOrders() })
+onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await Promise.all([merchantStore.fetchOrders(), notificationStore.fetchUnreadCount()]) })
 function needsDispatch(order) { return order.orderStatus === ORDER_STATUS.WAITING_DISPATCH && [ASSIGNMENT_STATUS.UNASSIGNED, ASSIGNMENT_STATUS.REJECTED, ASSIGNMENT_STATUS.EXPIRED].includes(order.assignmentStatus) }
 function matchesFilter(order, filter) { if (filter === 'dispatch') return needsDispatch(order); if (filter === 'accept') return order.assignmentStatus === ASSIGNMENT_STATUS.WAITING_ACCEPT; if (filter === 'today') return order.serviceDate === localDate(); if (filter === 'service') return order.orderStatus === ORDER_STATUS.WAITING_SERVICE; if (filter === 'active') return order.orderStatus === ORDER_STATUS.IN_SERVICE; if (filter === 'completed') return [ORDER_STATUS.WAITING_CONFIRM, ORDER_STATUS.COMPLETED].includes(order.orderStatus); return true }
 function localDate() { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}` }

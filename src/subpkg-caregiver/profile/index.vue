@@ -6,7 +6,7 @@
       <view class="menu-card"><view v-for="item in menus" :key="item.label" class="menu-row" @click="navigate(item)"><view class="menu-icon"><u-icon :name="item.icon" size="21" color="#3A7BF7" /></view><view class="menu-copy"><text class="menu-title">{{ item.label }}</text><text class="menu-desc">{{ item.desc }}</text></view><u-icon name="arrow-right" size="15" color="#C5CDD8" /></view></view>
       <u-button shape="round" class="logout-btn" @click="logout">退出当前账号</u-button>
     </view>
-    <role-tab-bar :tabs="CAREGIVER_TABS" current="/subpkg-caregiver/profile/index" />
+    <role-tab-bar :tabs="tabs" current="/subpkg-caregiver/profile/index" />
   </view>
 </template>
 
@@ -17,19 +17,23 @@ import RoleTabBar from '@/components/base/role-tab-bar.vue'
 import { CAREGIVER_TABS } from '@/constants/caregiver-navigation.js'
 import { ROLES } from '@/constants/roles.js'
 import { useCaregiverStore } from '@/store/caregiver.js'
+import { useNotificationStore } from '@/store/notification.js'
 import { useUserStore } from '@/store/user.js'
 import { requireRole } from '@/utils/permission.js'
 
 const userStore = useUserStore()
 const caregiverStore = useCaregiverStore()
+const notificationStore = useNotificationStore()
 const profile = computed(() => caregiverStore.profile)
+const tabs = computed(() => CAREGIVER_TABS.map((tab) => tab.label === '我的' ? { ...tab, badge: notificationStore.unreadCount || '' } : tab))
 const menus = [
+  { label: '消息中心', desc: '派单、服务和审核状态提醒', icon: 'bell', url: '/pages/notification/notification-list' },
   { label: '切换身份', desc: '进入顾客或其他已开通工作台', icon: 'reload', url: '/pages/role-switch/role-switch' },
   { label: '认证资料', desc: '基础资料、证书和服务能力', icon: 'account', url: '/subpkg-caregiver/apply/index' },
   { label: '服务区域', desc: '查看当前可服务区域', icon: 'map', url: '/subpkg-caregiver/apply/index' },
   { label: '隐私与安全', desc: '账号保护和隐私设置', icon: 'lock', url: '' },
 ]
-onShow(async () => { if (!requireRole(ROLES.CAREGIVER)) return; await caregiverStore.fetchProfile() })
+onShow(async () => { if (!requireRole(ROLES.CAREGIVER)) return; await Promise.all([caregiverStore.fetchProfile(), notificationStore.fetchUnreadCount()]) })
 function navigate(item) { if (item.url) uni.navigateTo({ url: item.url }); else uni.showToast({ title: `${item.label}将在后续版本开放`, icon: 'none' }) }
 function logout() { uni.showModal({ title: '退出登录', content: '确认退出当前护理人员账号吗？', success: ({ confirm }) => confirm && userStore.doLogout() }) }
 </script>

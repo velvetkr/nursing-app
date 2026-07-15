@@ -9,6 +9,7 @@
         <router-link to="/reviews/service"><el-icon><Management /></el-icon><span>服务审核</span><b v-if="counts.service">{{ counts.service }}</b></router-link>
         <router-link to="/exceptions"><el-icon><WarningFilled /></el-icon><span>异常监管</span><b v-if="exceptionCount">{{ exceptionCount }}</b></router-link>
         <router-link to="/complaints"><el-icon><ChatDotRound /></el-icon><span>投诉仲裁</span><b v-if="complaintCount">{{ complaintCount }}</b></router-link>
+        <router-link to="/notifications"><el-icon><BellFilled /></el-icon><span>平台消息</span><b v-if="notificationStore.unreadCount">{{ notificationStore.unreadCount }}</b></router-link>
       </nav>
       <div class="side-footer"><span>当前为 Mock 演示环境</span><small>真实权限由后端校验</small></div>
     </aside>
@@ -22,7 +23,8 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChatDotRound, DataAnalysis, Management, OfficeBuilding, UserFilled, WarningFilled } from '@element-plus/icons-vue'
+import { BellFilled, ChatDotRound, DataAnalysis, Management, OfficeBuilding, UserFilled, WarningFilled } from '@element-plus/icons-vue'
+import { useNotificationStore } from '../stores/notification.js'
 import { useReviewStore } from '../stores/review.js'
 import { useSessionStore } from '../stores/session.js'
 
@@ -30,9 +32,10 @@ const route = useRoute()
 const router = useRouter()
 const reviewStore = useReviewStore()
 const session = useSessionStore()
+const notificationStore = useNotificationStore()
 const counts = computed(() => reviewStore.dashboard?.pending || {})
 const exceptionCount = computed(() => reviewStore.dashboard?.exceptionCount || 0)
 const complaintCount = computed(() => reviewStore.dashboard?.complaintCount || 0)
-onMounted(() => reviewStore.fetchDashboard())
+onMounted(() => Promise.all([reviewStore.fetchDashboard(), notificationStore.fetchUnreadCount()]))
 function handleCommand(command) { if (command === 'logout') { session.logout(); router.replace('/login') } }
 </script>

@@ -24,7 +24,7 @@
       <view v-for="item in visibleMenus" :key="item.label" class="menu-item" @click="navigate(item.url)">
         <view class="menu-icon"><u-icon :name="item.icon" size="22" color="#3A7BF7" /></view>
         <view class="menu-copy"><text class="menu-title">{{ item.label }}</text><text class="menu-desc">{{ item.roleOnly ? `当前身份：${getRoleLabel(roleStore.currentRole)}` : item.desc }}</text></view>
-        <u-icon name="arrow-right" size="16" color="#C5CDD8" />
+        <text v-if="item.notification && notificationStore.unreadCount" class="menu-badge">{{ notificationStore.unreadCount > 99 ? '99+' : notificationStore.unreadCount }}</text><u-icon name="arrow-right" size="16" color="#C5CDD8" />
       </view>
     </view>
 
@@ -35,12 +35,15 @@
 
 <script setup>
 import { computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { getRoleLabel } from '@/constants/roles.js'
 import { useRoleStore } from '@/store/role.js'
+import { useNotificationStore } from '@/store/notification.js'
 import { useUserStore } from '@/store/user.js'
 
 const userStore = useUserStore()
 const roleStore = useRoleStore()
+const notificationStore = useNotificationStore()
 const orderEntries = [
   { label: '待支付', status: 0, icon: 'rmb-circle', color: '#FF8A5C', tone: 'orange' },
   { label: '待服务', status: 1, icon: 'clock', color: '#3A7BF7', tone: 'blue' },
@@ -48,6 +51,7 @@ const orderEntries = [
   { label: '已取消', status: 3, icon: 'close-circle', color: '#8E9DAE', tone: 'grey' },
 ]
 const menus = [
+  { label: '消息中心', desc: '订单、退款和投诉状态提醒', icon: 'bell', url: '/pages/notification/notification-list', notification: true },
   { label: '切换身份', desc: '进入顾客、护理人员或商户工作台', icon: 'reload', url: '/pages/role-switch/role-switch', roleOnly: true },
   { label: '服务地址', desc: '管理上门服务地点', icon: 'map', url: '/pages/address/address-list' },
   { label: '护理人员认证', desc: '提交身份、证书和服务能力资料', icon: 'server-man', url: '/subpkg-caregiver/apply/index' },
@@ -56,6 +60,7 @@ const menus = [
   { label: '隐私与安全', desc: '账户保护与隐私说明', icon: 'lock', url: '' },
 ]
 const visibleMenus = computed(() => menus.filter((item) => !item.roleOnly || roleStore.availableRoles.length > 1))
+onShow(() => { if (userStore.isLoggedIn) notificationStore.fetchUnreadCount() })
 
 function requireLogin() {
   if (userStore.isLoggedIn) return true
@@ -81,5 +86,6 @@ function logout() { uni.showModal({ title: '退出登录', content: '确认退�
 .section-heading { display: flex; align-items: center; justify-content: space-between; }.section-title { color: $text-color; font-size: $font-size-md; font-weight: 700; }.section-link { color: $primary-color; font-size: $font-size-xs; }
 .order-grid { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 24rpx; }.order-entry { display: flex; flex-direction: column; align-items: center; gap: 12rpx; color: $text-color-secondary; font-size: $font-size-xs; }.entry-icon { width: 72rpx; height: 72rpx; display: flex; align-items: center; justify-content: center; border-radius: 24rpx; }.entry-icon.orange { background: #fff2eb; }.entry-icon.blue { background: $primary-bg; }.entry-icon.green { background: #e9fbf7; }.entry-icon.grey { background: #f0f3f7; }
 .menu-panel { padding-top: 4rpx; padding-bottom: 4rpx; }.menu-item { display: flex; align-items: center; gap: 18rpx; padding: 24rpx 0; border-bottom: 1rpx solid $divider-color; }.menu-item:last-child { border-bottom: none; }.menu-icon { width: 68rpx; height: 68rpx; display: flex; align-items: center; justify-content: center; border-radius: 22rpx; background: $primary-bg; }.menu-copy { flex: 1; }.menu-title { display: block; color: $text-color; font-size: $font-size-base; font-weight: 600; }.menu-desc { display: block; margin-top: 5rpx; color: $text-color-hint; font-size: $font-size-xs; }
+.menu-badge { min-width:34rpx;height:34rpx;padding:0 9rpx;border-radius:$radius-round;color:#fff;background:$error-color;font-size:19rpx;line-height:34rpx;text-align:center; }
 .support-card { display: flex; align-items: center; gap: 16rpx; margin-top: 24rpx; padding: 22rpx; border-radius: 24rpx; background: #e9fbf7; }.support-title { display: block; color: $text-color; font-size: $font-size-sm; font-weight: 600; }.support-desc { display: block; margin-top: 4rpx; color: $text-color-secondary; font-size: $font-size-xs; }.logout-btn { height: 82rpx !important; margin-top: 30rpx; color: $warning-color !important; border-color: rgba(255,138,92,0.24) !important; background: rgba(255,255,255,0.72) !important; }
 </style>

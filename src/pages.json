@@ -87,6 +87,10 @@
     {
       "path": "pages/complaint/complaint-detail",
       "style": { "navigationBarTitleText": "投诉进度" }
+    },
+    {
+      "path": "pages/notification/notification-list",
+      "style": { "navigationBarTitleText": "消息中心" }
     }
   ],
   "subPackages": [
