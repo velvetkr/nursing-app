@@ -173,6 +173,10 @@
           "style": { "navigationBarTitleText": "经营结算" }
         },
         {
+          "path": "reports/index",
+          "style": { "navigationBarTitleText": "经营数据" }
+        },
+        {
           "path": "dispatch/index",
           "style": { "navigationBarTitleText": "选择护理人员" }
         },

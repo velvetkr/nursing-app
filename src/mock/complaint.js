@@ -2,6 +2,7 @@ import Mock from 'mockjs'
 import { COMPLAINT_DECISION, COMPLAINT_STATUS, getComplaintStatusMeta } from '@/constants/complaint-status.js'
 import { ORDER_STATUS, PAYMENT_STATUS, deriveLegacyStatus } from '@/constants/order-status.js'
 import { REFUND_STATUS } from '@/constants/aftersales-status.js'
+import { getToken } from '@/utils/storage.js'
 import { refunds, now } from './aftersales-state.js'
 import { getMockOrder } from './order.js'
 import { getMockMerchantIdByUserId } from './user.js'
@@ -54,7 +55,7 @@ const submittedKeys = new Set()
 
 function clone(value) { return JSON.parse(JSON.stringify(value)) }
 function getQueryParam(url, param) { const match = String(url).match(new RegExp(`[?&]${param}=([^&]*)`)); return match ? decodeURIComponent(match[1]) : null }
-function getMerchantId(options) { const auth = options.headers?.Authorization || options.headers?.authorization || ''; const userId = Number(auth.match(/mock_jwt_(\d+)_MERCHANT_MEMBER_/)?.[1] || 0); return getMockMerchantIdByUserId(userId) }
+function getMerchantId(options) { const auth = options.headers?.Authorization || options.headers?.authorization || ''; const token = auth.replace('Bearer ', '') || getToken(); const userId = Number(token.match(/mock_jwt_(\d+)_MERCHANT_MEMBER_/)?.[1] || 0); return getMockMerchantIdByUserId(userId) }
 function appendTrack(complaint, action, operator, content) { complaint.updateTime = now(); complaint.tracks.unshift({ trackId: nextTrackId++, action, operator, content, createTime: complaint.updateTime }) }
 function summary(complaint) { const order = getMockOrder(complaint.orderId); return { complaintId: complaint.complaintId, complaintNo: complaint.complaintNo, orderId: complaint.orderId, orderNo: order?.orderNo, serviceItemName: order?.serviceItemName, receiverName: order?.receiverName, merchantName: complaint.merchantName, type: complaint.type, typeText: complaint.typeText, status: complaint.status, statusText: getComplaintStatusMeta(complaint.status).label, content: complaint.content, createTime: complaint.createTime, updateTime: complaint.updateTime } }
 function detail(complaint) { return { ...clone(complaint), ...summary(complaint), order: clone(getMockOrder(complaint.orderId)) } }

@@ -9,7 +9,7 @@ import Mock from 'mockjs'
 import { getMockOrder } from './order.js'
 
 // ========== 模拟评价数据 ==========
-const reviews = [
+export const reviews = [
   { reviewId: 30001, orderId: 20000, itemId: 401, userId: 10001,
     rating: 5, content: '非常满意！护士技术娴熟，态度也很好，妈妈完全没感到疼。',
     userNickname: '张阿姨', status: 2,

@@ -22,6 +22,7 @@ import './review.js'
 import './complaint.js'
 import './notification.js'
 import './settlement.js'
+import './merchant-report.js'
 
 // 全局 Mock 配置
 Mock.setup({

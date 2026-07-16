@@ -1,12 +1,13 @@
 import Mock from 'mockjs'
 import { ASSIGNMENT_STATUS } from '@/constants/order-status.js'
 import { EXCEPTION_STATUS } from '@/constants/aftersales-status.js'
+import { getToken } from '@/utils/storage.js'
 import { getActiveMerchantCaregivers } from './merchant-team.js'
 import { getMockMerchantIdByUserId } from './user.js'
 import { getMockOrder } from './order.js'
 import { calculateCancellation, clone, exceptions, refunds, now, refreshRefund } from './aftersales-state.js'
 
-function getMerchantId(options) { const auth = options.headers?.Authorization || options.headers?.authorization || ''; const userId = Number(auth.match(/mock_jwt_(\d+)_MERCHANT_MEMBER_/)?.[1] || 0); return getMockMerchantIdByUserId(userId) }
+function getMerchantId(options) { const auth = options.headers?.Authorization || options.headers?.authorization || ''; const token = auth.replace('Bearer ', '') || getToken(); const userId = Number(token.match(/mock_jwt_(\d+)_MERCHANT_MEMBER_/)?.[1] || 0); return getMockMerchantIdByUserId(userId) }
 
 Mock.mock(/\/api\/v1\/orders\/\d+\/cancel-preview$/, 'get', (options) => { const order = getMockOrder(Number(options.url.match(/orders\/(\d+)/)?.[1])); if (!order) return { code: 3007, message: '订单不存在', data: null }; return { code: 0, message: 'success', data: { orderId: order.orderId, totalAmount: Number(order.totalAmount), ...calculateCancellation(order) } } })
 Mock.mock(/\/api\/v1\/orders\/\d+\/aftersales$/, 'get', (options) => { const orderId = Number(options.url.match(/orders\/(\d+)/)?.[1]); const order = getMockOrder(orderId); if (!order) return { code: 3007, message: '订单不存在', data: null }; refreshRefund(order); return { code: 0, message: 'success', data: { refund: clone(refunds.get(orderId) || order.refund || null), exception: clone(exceptions.find((item) => item.orderId === orderId) || null) } } })
