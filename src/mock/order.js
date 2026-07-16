@@ -114,6 +114,34 @@ function getMerchantOrder(options, orderId) {
 
 // 预设订单覆盖完整派单和履约状态
 const presetOrders = [
+  { orderId: 19994, orderNo: '2026062819994', serviceItemId: 103, serviceSpecId: 10301,
+    serviceItemName: '日常起居照料', specName: '单次服务',
+    specPrice: 200, totalAmount: 200, status: 2,
+    merchantId: 20001, merchantName: '康宁护理中心',
+    orderStatus: ORDER_STATUS.COMPLETED, paymentStatus: PAYMENT_STATUS.PAID,
+    assignmentStatus: ASSIGNMENT_STATUS.ACCEPTED,
+    receiverName: '周奶奶', receiverPhone: '135****6182', addressDetail: '北京市朝阳区安华里二区8号楼502',
+    serviceDate: '2026-06-29', serviceTimeSlot: 'AFTERNOON',
+    createTime: '2026-06-28T09:00:00+08:00',
+    currentAssignment: { assignmentId: 59994, caregiverId: 50001, caregiverName: '王护理员', caregiverPhone: '138****8000', status: ASSIGNMENT_STATUS.ACCEPTED, acceptedTime: '2026-06-28T09:20:00+08:00' },
+    assignments: [
+      { assignmentId: 59994, caregiverId: 50001, caregiverName: '王护理员', status: ASSIGNMENT_STATUS.ACCEPTED, dispatchTime: '2026-06-28T09:10:00+08:00', acceptedTime: '2026-06-28T09:20:00+08:00' },
+    ],
+    serviceRecords: [
+      { recordId: '19994-1', action: 'CHECK_IN', content: '护理人员已到达并签到', distanceMeters: 28, createTime: '2026-06-29T13:55:00+08:00' },
+      { recordId: '19994-2', action: 'START', content: '护理服务已开始', createTime: '2026-06-29T14:00:00+08:00' },
+      { recordId: '19994-3', action: 'FINISH', content: '护理服务已结束，服务记录已提交', summary: '协助完成日常起居照料，服务过程正常。', createTime: '2026-06-29T16:00:00+08:00' },
+    ],
+    operationLogs: [
+      createOperationLog('create', '用户创建订单', '2026-06-28T09:00:00+08:00', null, ORDER_STATUS.CREATED),
+      createOperationLog('pay', '支付成功，等待商户派单', '2026-06-28T09:05:00+08:00', ORDER_STATUS.CREATED, ORDER_STATUS.WAITING_DISPATCH),
+      createOperationLog('dispatch', '商户已指派王护理员', '2026-06-28T09:10:00+08:00', ORDER_STATUS.WAITING_DISPATCH, ORDER_STATUS.WAITING_DISPATCH),
+      createOperationLog('accept', '护理人员已接单', '2026-06-28T09:20:00+08:00', ORDER_STATUS.WAITING_DISPATCH, ORDER_STATUS.WAITING_SERVICE),
+      createOperationLog('start', '护理服务已开始', '2026-06-29T14:00:00+08:00', ORDER_STATUS.WAITING_SERVICE, ORDER_STATUS.IN_SERVICE),
+      createOperationLog('finish', '护理人员已结束服务', '2026-06-29T16:00:00+08:00', ORDER_STATUS.IN_SERVICE, ORDER_STATUS.WAITING_CONFIRM),
+      createOperationLog('confirm', '用户确认服务完成', '2026-06-29T16:20:00+08:00', ORDER_STATUS.WAITING_CONFIRM, ORDER_STATUS.COMPLETED),
+    ],
+  },
   { orderId: 20000, orderNo: '2026070120000', serviceItemId: 401, serviceSpecId: 40101,
     serviceItemName: '静脉采血', specName: '单次服务',
     specPrice: 80, totalAmount: 80, status: 2,
@@ -244,6 +272,10 @@ presetOrders.forEach((o) => orders.push(o))
 
 export function getMockOrder(orderId) {
   return orders.find((order) => order.orderId === Number(orderId)) || null
+}
+
+export function getMockOrders() {
+  return orders
 }
 
 // ========== 接口 Mock ==========

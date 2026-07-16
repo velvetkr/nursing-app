@@ -123,6 +123,10 @@
           "style": { "navigationBarTitleText": "排班管理" }
         },
         {
+          "path": "earnings/index",
+          "style": { "navigationBarTitleText": "我的佣金" }
+        },
+        {
           "path": "profile/index",
           "style": { "navigationBarTitleText": "护理人员中心" }
         }
@@ -163,6 +167,10 @@
         {
           "path": "complaint-detail/index",
           "style": { "navigationBarTitleText": "投诉处理" }
+        },
+        {
+          "path": "settlements/index",
+          "style": { "navigationBarTitleText": "经营结算" }
         },
         {
           "path": "dispatch/index",

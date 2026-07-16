@@ -28,6 +28,7 @@ const profile = computed(() => caregiverStore.profile)
 const tabs = computed(() => CAREGIVER_TABS.map((tab) => tab.label === '我的' ? { ...tab, badge: notificationStore.unreadCount || '' } : tab))
 const menus = [
   { label: '消息中心', desc: '派单、服务和审核状态提醒', icon: 'bell', url: '/pages/notification/notification-list' },
+  { label: '我的佣金', desc: '查看订单佣金与提现记录', icon: 'rmb-circle', url: '/subpkg-caregiver/earnings/index' },
   { label: '切换身份', desc: '进入顾客或其他已开通工作台', icon: 'reload', url: '/pages/role-switch/role-switch' },
   { label: '认证资料', desc: '基础资料、证书和服务能力', icon: 'account', url: '/subpkg-caregiver/apply/index' },
   { label: '服务区域', desc: '查看当前可服务区域', icon: 'map', url: '/subpkg-caregiver/apply/index' },
