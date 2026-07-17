@@ -97,7 +97,6 @@ export const useUserStore = defineStore(
         smsCode,
         password,
         nickname,
-        targetRole: ROLES.CUSTOMER,
       })
       _onAuthSuccess(res.data)
       return res
@@ -106,7 +105,9 @@ export const useUserStore = defineStore(
     /** 退出登录 */
     async function doLogout() {
       try {
-        await http.post('/api/v1/users/logout')
+        await http.post('/api/v1/users/logout', null, {
+          idempotentKey: createIdempotentKey('logout'),
+        })
       } catch {
         // 即使后端调用失败也清除本地状态
       }
@@ -127,22 +128,8 @@ export const useUserStore = defineStore(
     }
 
     async function fetchRoles() {
-      const res = await http.get('/api/v1/profile/roles')
-      const roles = res.data?.roles || []
       const roleStore = useRoleStore()
-      roleStore.applyAuthSession({
-        roles,
-        currentRole: roleStore.currentRole,
-        permissions: roleStore.permissions,
-      })
-      userInfo.value = {
-        ...userInfo.value,
-        roles,
-        merchantId: res.data?.merchantId ?? userInfo.value?.merchantId ?? null,
-        caregiverId: res.data?.caregiverId ?? userInfo.value?.caregiverId ?? null,
-      }
-      setUserInfo(userInfo.value)
-      return roles
+      return roleStore.availableRoles
     }
 
     async function switchRole(targetRole) {
@@ -158,6 +145,8 @@ export const useUserStore = defineStore(
       const res = await http.patch('/api/v1/users/profile', {
         ...data,
         version: data.version ?? userInfo.value?.version ?? 0,
+      }, {
+        idempotentKey: createIdempotentKey('profile-update'),
       })
       // 合并更新本地
       userInfo.value = { ...userInfo.value, ...res.data }

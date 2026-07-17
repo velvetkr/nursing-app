@@ -41,7 +41,7 @@ describe('workOrderStore', () => {
     await store.fetchTasks()
     await store.fetchTaskDetail(1)
 
-    expect(store.tasks[0].orderStatus).toBe('WAITING_SERVICE')
+    expect(store.tasks[0].orderStatus).toBe('WAITING_DISPATCH')
     expect(store.currentTask.orderStatus).toBe('COMPLETED')
     expect(store.currentTask.serviceRecords).toEqual([])
   })

@@ -1,8 +1,8 @@
 /**
  * 开发环境配置
- * 本地开发指向 Gateway 端口
+ * 局域网联调指向后端 Gateway
  */
 export default {
-  BASE_URL: 'http://localhost:8080',
+  BASE_URL: 'http://192.168.57.85',
   ENV: 'dev',
 }

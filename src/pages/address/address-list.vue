@@ -55,7 +55,7 @@ const selectedId = ref(null)
 
 onLoad((options) => {
   selectMode.value = options.mode === 'select'
-  selectedId.value = options.selectedId ? Number(options.selectedId) : null
+  selectedId.value = options.selectedId ? String(options.selectedId) : null
 })
 
 onMounted(() => addressStore.fetchAddresses())

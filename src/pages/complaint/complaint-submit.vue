@@ -4,7 +4,7 @@
 <script setup>
 import { ref } from 'vue'; import { onLoad } from '@dcloudio/uni-app'; import { useComplaintStore } from '@/store/complaint.js'; import { useUserStore } from '@/store/user.js'
 const complaintStore = useComplaintStore(); const userStore = useUserStore(); const orderId = ref(null); const type = ref(1); const content = ref(''); const images = ref([]); const submitting = ref(false)
-onLoad((options) => { orderId.value = Number(options.orderId) }); function chooseImages() { uni.chooseImage({ count: 6 - images.value.length, success: ({ tempFilePaths }) => images.value.push(...tempFilePaths) }) }
+onLoad((options) => { orderId.value = String(options.orderId || '') }); function chooseImages() { uni.chooseImage({ count: 6 - images.value.length, success: ({ tempFilePaths }) => images.value.push(...tempFilePaths) }) }
 async function submit() { if (content.value.trim().length < 5) return uni.showToast({ title: '请详细描述问题', icon: 'none' }); submitting.value = true; try { const uploaded = []; for (const path of images.value) { try { const file = await userStore.uploadFile(path, 'complaint'); uploaded.push(file.fileUrl) } catch { uploaded.push(path) } } await complaintStore.submitComplaint({ orderId: orderId.value, type: type.value, content: content.value.trim(), images: uploaded }); uni.showToast({ title: '投诉已提交', icon: 'success' }); setTimeout(() => uni.redirectTo({ url: '/pages/complaint/complaint-list' }), 700) } finally { submitting.value = false } }
 </script>
 <style lang="scss" scoped>

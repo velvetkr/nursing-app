@@ -59,10 +59,10 @@ function getQueryParam(url, param) {
 // 1. 提交评价
 Mock.mock(/\/api\/v1\/reviews$/, 'post', (options) => {
   const body = JSON.parse(options.body)
-  const idempotentKey = (options.headers || {})['Idempotent-Key'] || ''
+  const idempotentKey = (options.headers || {})['Idempotency-Key'] || ''
 
   if (!idempotentKey) {
-    return { code: 1000, message: '缺少 Idempotent-Key', data: null }
+    return { code: 1000, message: '缺少 Idempotency-Key', data: null }
   }
   if (!body.orderId || !body.rating || !body.content?.trim()) {
     return { code: 1000, message: '订单ID、评分和评价内容为必填', data: null }

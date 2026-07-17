@@ -23,7 +23,7 @@ import { useUserStore } from '@/store/user.js'
 
 const reviewStore = useReviewStore(); const userStore = useUserStore(); const orderId = ref(null); const rating = ref(5); const content = ref(''); const images = ref([]); const submitting = ref(false)
 const ratingLabels = ['', '非常不满意', '不满意', '一般', '满意', '非常满意']
-onLoad((options) => { orderId.value = Number(options.orderId) })
+onLoad((options) => { orderId.value = String(options.orderId || '') })
 function chooseImages() { uni.chooseImage({ count: 6 - images.value.length, success: ({ tempFilePaths }) => { images.value.push(...tempFilePaths) } }) }
 async function submit() {
   if (!rating.value) return uni.showToast({ title: '请选择服务评分', icon: 'none' })

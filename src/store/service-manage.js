@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import http, { createIdempotentKey, resolveAssetUrl } from '@/utils/request.js'
+import { USE_MOCK_API, unavailableApi } from '@/constants/api-capabilities.js'
 
 function normalizeManagedService(item = {}) {
   const specs = (item.specs || []).map((spec) => ({
@@ -28,6 +29,7 @@ export const useServiceManageStore = defineStore('serviceManage', () => {
   const loading = ref(false)
 
   async function fetchServices(params = {}) {
+    if (!USE_MOCK_API) { services.value = []; return [] }
     loading.value = true
     try {
       const res = await http.get('/api/v1/merchants/services', params)
@@ -40,6 +42,7 @@ export const useServiceManageStore = defineStore('serviceManage', () => {
   }
 
   async function fetchServiceDetail(itemId) {
+    if (!USE_MOCK_API) throw unavailableApi('商户服务管理')
     loading.value = true
     try {
       const res = await http.get(`/api/v1/merchants/services/${itemId}`)
@@ -51,6 +54,7 @@ export const useServiceManageStore = defineStore('serviceManage', () => {
   }
 
   async function createService(data) {
+    if (!USE_MOCK_API) throw unavailableApi('商户服务管理')
     const res = await http.post('/api/v1/merchants/services', data, {
       idempotentKey: createIdempotentKey('service-create'),
     })
@@ -58,12 +62,14 @@ export const useServiceManageStore = defineStore('serviceManage', () => {
   }
 
   async function updateService(itemId, data) {
+    if (!USE_MOCK_API) throw unavailableApi('商户服务管理')
     const res = await http.put(`/api/v1/merchants/services/${itemId}`, data)
     currentService.value = normalizeManagedService(res.data)
     return currentService.value
   }
 
   async function submitService(itemId) {
+    if (!USE_MOCK_API) throw unavailableApi('商户服务管理')
     const res = await http.post(`/api/v1/merchants/services/${itemId}/submit`, null, {
       idempotentKey: createIdempotentKey('service-submit'),
     })
@@ -72,6 +78,7 @@ export const useServiceManageStore = defineStore('serviceManage', () => {
   }
 
   async function publishService(itemId) {
+    if (!USE_MOCK_API) throw unavailableApi('商户服务管理')
     const res = await http.post(`/api/v1/merchants/services/${itemId}/publish`, null, {
       idempotentKey: createIdempotentKey('service-publish'),
     })
@@ -79,6 +86,7 @@ export const useServiceManageStore = defineStore('serviceManage', () => {
   }
 
   async function offlineService(itemId) {
+    if (!USE_MOCK_API) throw unavailableApi('商户服务管理')
     const res = await http.post(`/api/v1/merchants/services/${itemId}/offline`, null, {
       idempotentKey: createIdempotentKey('service-offline'),
     })

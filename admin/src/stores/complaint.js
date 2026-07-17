@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import http from '../api/request.js'
+import http, { createIdempotencyKey } from '../api/request.js'
 
 export const useComplaintStore = defineStore('adminComplaint', () => {
   const complaints = ref([])
@@ -11,7 +11,7 @@ export const useComplaintStore = defineStore('adminComplaint', () => {
   async function fetchComplaints(params = {}) {
     loading.value = true
     try {
-      const res = await http.get('/api/v1/admin/complaints', { params })
+      const res = await http.get('/api/v1/admin/feedback/complaints', { params })
       complaints.value = res.data.list || []
       total.value = res.data.total || 0
       return res.data
@@ -21,16 +21,18 @@ export const useComplaintStore = defineStore('adminComplaint', () => {
   }
 
   async function fetchComplaintDetail(id) {
-    const res = await http.get(`/api/v1/admin/complaints/${id}`)
-    currentComplaint.value = res.data
+    const res = await http.get('/api/v1/admin/feedback/complaints', { params: { page: 1, size: 50 } })
+    currentComplaint.value = (res.data.list || []).find((item) => String(item.id) === String(id)) || null
     return currentComplaint.value
   }
 
   async function arbitrateComplaint(id, payload) {
-    const res = await http.post(`/api/v1/admin/complaints/${id}/arbitrate`, payload, {
-      headers: { 'Idempotent-Key': `admin-complaint-${id}-${Date.now()}` },
+    const status = payload.status ?? (payload.decision === 'NO_REFUND' ? 3 : 2)
+    const content = payload.content || payload.remark
+    await http.post(`/api/v1/admin/feedback/complaints/${id}/handle`, { status, content }, {
+      headers: { 'Idempotency-Key': createIdempotencyKey('complaint-handle') },
     })
-    currentComplaint.value = res.data
+    currentComplaint.value = { ...currentComplaint.value, status }
     return currentComplaint.value
   }
 

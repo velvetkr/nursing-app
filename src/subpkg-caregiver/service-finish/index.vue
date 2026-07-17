@@ -43,7 +43,7 @@ const canSubmit = computed(() => summary.value.trim().length >= 10 && confirmed.
 
 onLoad((options) => {
   if (!requireRole(ROLES.CAREGIVER)) return
-  orderId.value = Number(options.id)
+  orderId.value = String(options.id || '')
 })
 
 async function submit() {

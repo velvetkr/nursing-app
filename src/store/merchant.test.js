@@ -35,7 +35,7 @@ describe('merchantStore', () => {
       size: 20,
       orderStatus: 'WAITING_DISPATCH',
     })
-    expect(store.orders[0].orderStatus).toBe('WAITING_SERVICE')
+    expect(store.orders[0].orderStatus).toBe('WAITING_DISPATCH')
     expect(store.total).toBe(1)
   })
 

@@ -18,8 +18,8 @@ export const useSessionStore = defineStore('adminSession', () => {
   const user = ref(readStoredUser())
   const isAuthenticated = computed(() => Boolean(token.value))
 
-  async function login(account, password) {
-    const res = await http.post('/api/v1/admin/login', { account, password })
+  async function login(username, password) {
+    const res = await http.post('/api/v1/admin/login', { username, password })
     token.value = res.data.token
     user.value = res.data.user
     localStorage.setItem(TOKEN_KEY, token.value)

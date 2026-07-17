@@ -61,8 +61,8 @@ function summary(complaint) { const order = getMockOrder(complaint.orderId); ret
 function detail(complaint) { return { ...clone(complaint), ...summary(complaint), order: clone(getMockOrder(complaint.orderId)) } }
 
 Mock.mock(/\/api\/v1\/complaints$/, 'post', (options) => {
-  const body = JSON.parse(options.body || '{}'); const requestKey = (options.headers || {})['Idempotent-Key'] || ''
-  if (!requestKey) return { code: 1000, message: '缺少 Idempotent-Key', data: null }
+  const body = JSON.parse(options.body || '{}'); const requestKey = (options.headers || {})['Idempotency-Key'] || ''
+  if (!requestKey) return { code: 1000, message: '缺少 Idempotency-Key', data: null }
   if (!body.orderId || !body.type || !body.content?.trim()) return { code: 1000, message: '订单ID、投诉类型和内容为必填', data: null }
   const order = getMockOrder(body.orderId)
   if (!order) return { code: 1005, message: '订单不存在', data: null }

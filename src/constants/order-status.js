@@ -1,6 +1,7 @@
 export const ORDER_STATUS = Object.freeze({
   CREATED: 'CREATED',
   WAITING_DISPATCH: 'WAITING_DISPATCH',
+  WAITING_ACCEPT: 'WAITING_ACCEPT',
   WAITING_SERVICE: 'WAITING_SERVICE',
   IN_SERVICE: 'IN_SERVICE',
   WAITING_CONFIRM: 'WAITING_CONFIRM',
@@ -44,6 +45,12 @@ export const ORDER_STATUS_META = Object.freeze({
   [ORDER_STATUS.WAITING_DISPATCH]: {
     text: '待派单',
     description: '商户正在为您安排合适的护理人员',
+    icon: 'clock-fill',
+    tone: 'primary',
+  },
+  [ORDER_STATUS.WAITING_ACCEPT]: {
+    text: '待接单',
+    description: '商户已派单，等待护理人员确认任务',
     icon: 'clock-fill',
     tone: 'primary',
   },
@@ -93,17 +100,22 @@ export const ORDER_STATUS_META = Object.freeze({
 
 export const LEGACY_STATUS_MAP = Object.freeze({
   0: '待支付',
-  1: '待服务',
+  1: '待派单',
   2: '已完成',
   3: '已取消',
   4: '退款中',
   5: '已退款',
+  6: '已派单',
+  7: '已接单',
+  8: '服务中',
+  9: '待确认',
 })
 
 export const ORDER_TRANSITIONS = Object.freeze({
   [ORDER_STATUS.CREATED]: [ORDER_STATUS.WAITING_DISPATCH, ORDER_STATUS.CANCELED],
-  [ORDER_STATUS.WAITING_DISPATCH]: [ORDER_STATUS.WAITING_SERVICE, ORDER_STATUS.CANCELED],
-  [ORDER_STATUS.WAITING_SERVICE]: [ORDER_STATUS.IN_SERVICE, ORDER_STATUS.CANCELED],
+  [ORDER_STATUS.WAITING_DISPATCH]: [ORDER_STATUS.WAITING_ACCEPT, ORDER_STATUS.CANCELED],
+  [ORDER_STATUS.WAITING_ACCEPT]: [ORDER_STATUS.WAITING_SERVICE],
+  [ORDER_STATUS.WAITING_SERVICE]: [ORDER_STATUS.IN_SERVICE],
   [ORDER_STATUS.IN_SERVICE]: [ORDER_STATUS.WAITING_CONFIRM, ORDER_STATUS.DISPUTED],
   [ORDER_STATUS.WAITING_CONFIRM]: [ORDER_STATUS.COMPLETED, ORDER_STATUS.DISPUTED],
   [ORDER_STATUS.DISPUTED]: [ORDER_STATUS.COMPLETED, ORDER_STATUS.CANCELED, ORDER_STATUS.CLOSED],
@@ -118,6 +130,11 @@ export function canTransitionOrderStatus(fromStatus, toStatus) {
 
 export function deriveLegacyStatus(orderStatus, paymentStatus = PAYMENT_STATUS.UNPAID) {
   if (orderStatus === ORDER_STATUS.CREATED) return 0
+  if (orderStatus === ORDER_STATUS.WAITING_DISPATCH) return 1
+  if (orderStatus === ORDER_STATUS.WAITING_ACCEPT) return 6
+  if (orderStatus === ORDER_STATUS.WAITING_SERVICE) return 7
+  if (orderStatus === ORDER_STATUS.IN_SERVICE) return 8
+  if (orderStatus === ORDER_STATUS.WAITING_CONFIRM) return 9
   if (orderStatus === ORDER_STATUS.COMPLETED) return 2
   if (orderStatus === ORDER_STATUS.CANCELED || orderStatus === ORDER_STATUS.CLOSED) {
     if (paymentStatus === PAYMENT_STATUS.REFUNDING) return 4
@@ -133,10 +150,15 @@ export function deriveLegacyStatus(orderStatus, paymentStatus = PAYMENT_STATUS.U
 export function inferOrderStatus(legacyStatus) {
   const status = Number(legacyStatus)
   if (status === 0) return ORDER_STATUS.CREATED
+  if (status === 1) return ORDER_STATUS.WAITING_DISPATCH
   if (status === 2) return ORDER_STATUS.COMPLETED
   if (status === 3 || status === 4) return ORDER_STATUS.CANCELED
   if (status === 5) return ORDER_STATUS.CLOSED
-  return ORDER_STATUS.WAITING_SERVICE
+  if (status === 6) return ORDER_STATUS.WAITING_ACCEPT
+  if (status === 7) return ORDER_STATUS.WAITING_SERVICE
+  if (status === 8) return ORDER_STATUS.IN_SERVICE
+  if (status === 9) return ORDER_STATUS.WAITING_CONFIRM
+  return ORDER_STATUS.WAITING_DISPATCH
 }
 
 export function inferPaymentStatus(legacyStatus) {
@@ -150,33 +172,37 @@ export function inferPaymentStatus(legacyStatus) {
 export function normalizeOrderState(order = {}) {
   const orderStatus = order.orderStatus || inferOrderStatus(order.status)
   const paymentStatus = order.paymentStatus || inferPaymentStatus(order.status)
-  const assignmentStatus = order.assignmentStatus || (
-    orderStatus === ORDER_STATUS.WAITING_DISPATCH
-      ? ASSIGNMENT_STATUS.UNASSIGNED
-      : order.currentAssignment?.status || ASSIGNMENT_STATUS.ACCEPTED
-  )
+  const numericAssignmentStatus = order.currentAssignment?.status ?? order.assignmentStatus
+  const assignmentStatus = typeof numericAssignmentStatus === 'number'
+    ? ({ 0: ASSIGNMENT_STATUS.WAITING_ACCEPT, 1: ASSIGNMENT_STATUS.ACCEPTED, 2: ASSIGNMENT_STATUS.REJECTED }[numericAssignmentStatus] || ASSIGNMENT_STATUS.UNASSIGNED)
+    : numericAssignmentStatus || (
+      orderStatus === ORDER_STATUS.WAITING_DISPATCH
+        ? ASSIGNMENT_STATUS.UNASSIGNED
+        : orderStatus === ORDER_STATUS.WAITING_ACCEPT
+          ? ASSIGNMENT_STATUS.WAITING_ACCEPT
+          : ASSIGNMENT_STATUS.ACCEPTED
+    )
 
   return {
     ...order,
+    orderId: order.orderId == null ? order.orderId : String(order.orderId),
+    serviceItemId: order.serviceItemId == null ? order.serviceItemId : String(order.serviceItemId),
     orderStatus,
     paymentStatus,
     assignmentStatus,
     status: order.status ?? deriveLegacyStatus(orderStatus, paymentStatus),
     assignments: order.assignments || [],
     serviceRecords: order.serviceRecords || [],
-    operationLogs: order.operationLogs || [],
+    operationLogs: (order.operationLogs || []).map((log) => ({
+      ...log,
+      fromOrderStatus: log.fromOrderStatus ?? log.fromStatus,
+      toOrderStatus: log.toOrderStatus ?? log.toStatus,
+    })),
   }
 }
 
 export function getOrderStatusMeta(orderOrStatus) {
-  if (typeof orderOrStatus === 'number') {
-    return {
-      text: LEGACY_STATUS_MAP[orderOrStatus] || '未知',
-      description: '订单状态已更新',
-      icon: 'info-circle',
-      tone: orderOrStatus === 0 ? 'warning' : orderOrStatus === 2 ? 'success' : 'neutral',
-    }
-  }
+  if (typeof orderOrStatus === 'number') return ORDER_STATUS_META[inferOrderStatus(orderOrStatus)]
 
   const orderStatus = typeof orderOrStatus === 'string'
     ? orderOrStatus
@@ -198,7 +224,6 @@ export function canCustomerCancel(order) {
   return [
     ORDER_STATUS.CREATED,
     ORDER_STATUS.WAITING_DISPATCH,
-    ORDER_STATUS.WAITING_SERVICE,
   ].includes(normalizeOrderState(order).orderStatus)
 }
 

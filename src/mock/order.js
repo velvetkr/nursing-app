@@ -301,7 +301,7 @@ Mock.mock(/\/api\/v1\/orders\/prepay-token/, 'post', () => {
 
 // 2. 创建订单
 Mock.mock(/\/api\/v1\/orders$/, 'post', (options) => {
-  const idempotentKey = (options.headers || {})['Idempotent-Key'] || ''
+  const idempotentKey = (options.headers || {})['Idempotency-Key'] || ''
   const body = JSON.parse(options.body)
 
   // 幂等校验
@@ -481,7 +481,7 @@ Mock.mock(/\/api\/v1\/orders\/\d+\/cancel/, 'post', (options) => {
 
 // 6. 发起支付（返回模拟支付宝支付参数）
 Mock.mock(/\/api\/v1\/orders\/\d+\/pay/, 'post', (options) => {
-  const idempotentKey = (options.headers || {})['Idempotent-Key'] || ''
+  const idempotentKey = (options.headers || {})['Idempotency-Key'] || ''
   const idMatch = options.url.match(/\/api\/v1\/orders\/(\d+)\/pay/)
   const orderId = idMatch ? parseInt(idMatch[1]) : null
   const order = orders.find((o) => o.orderId === orderId)
@@ -490,7 +490,7 @@ Mock.mock(/\/api\/v1\/orders\/\d+\/pay/, 'post', (options) => {
     return { code: 3007, message: '订单不存在', data: null }
   }
   if (!idempotentKey) {
-    return { code: 1000, message: '支付缺少 Idempotent-Key', data: null }
+    return { code: 1000, message: '支付缺少 Idempotency-Key', data: null }
   }
 
   if (order.orderStatus !== ORDER_STATUS.CREATED || order.paymentStatus !== PAYMENT_STATUS.UNPAID) {

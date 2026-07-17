@@ -123,7 +123,7 @@ onLoad(async (options) => {
   const { id } = options
   if (id) {
     try {
-      service.value = await serviceStore.fetchServiceDetail(parseInt(id))
+      service.value = await serviceStore.fetchServiceDetail(String(id))
       if (service.value?.specs?.length) {
         selectedSpec.value = service.value.specs[0]
       }
@@ -136,7 +136,7 @@ onLoad(async (options) => {
 
 async function loadReviews(itemId) {
   try {
-    const res = await http.get('/api/v1/reviews', { itemId: parseInt(itemId), page: 1, size: 5 })
+    const res = await http.get('/api/v1/reviews', { itemId: String(itemId), page: 1, size: 5 })
     reviews.value = res.data?.list || []
     reviewTotal.value = res.data?.total || 0
   } catch {

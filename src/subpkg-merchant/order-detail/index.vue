@@ -24,7 +24,7 @@ const order = computed(() => merchantStore.currentOrder)
 const canDispatch = computed(() => order.value?.orderStatus === ORDER_STATUS.WAITING_DISPATCH && [ASSIGNMENT_STATUS.UNASSIGNED, ASSIGNMENT_STATUS.REJECTED, ASSIGNMENT_STATUS.EXPIRED].includes(order.value?.assignmentStatus))
 const statusMeta = computed(() => { if (canDispatch.value) return { text: '待派单', tone: 'warning', icon: 'share' }; if (order.value?.assignmentStatus === ASSIGNMENT_STATUS.WAITING_ACCEPT) return { text: '待接单', tone: 'warning', icon: 'bell-fill' }; return getOrderStatusMeta(order.value || {}) })
 const statusDescription = computed(() => ({ WAITING_DISPATCH: canDispatch.value ? '请选择合适的护理人员完成派单' : '等待护理人员接受任务', WAITING_SERVICE: '护理人员已接单，等待按时上门', IN_SERVICE: '护理服务正在进行中', WAITING_CONFIRM: '护理人员已结束服务，等待顾客确认', COMPLETED: '订单已经完成' }[order.value?.orderStatus] || statusMeta.value.description || '订单状态已更新'))
-onLoad(async (options) => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; orderId = Number(options.id); await merchantStore.fetchOrderDetail(orderId) })
+onLoad(async (options) => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; orderId = String(options.id || ''); await merchantStore.fetchOrderDetail(orderId) })
 onShow(async () => { if (orderId) await merchantStore.fetchOrderDetail(orderId) })
 function slotText(slot) { return ({ MORNING: '上午 08:00-12:00', AFTERNOON: '下午 13:00-17:00', EVENING: '晚上 18:00-21:00' }[slot] || slot) }
 function formatTime(value) { return value ? value.replace('T', ' ').replace('+08:00', '').slice(0, 16) : '--' }

@@ -24,7 +24,7 @@ const amount = ref('')
 
 onLoad((options) => {
   status.value = options.status || 'success'
-  orderId.value = options.orderId ? Number(options.orderId) : null
+  orderId.value = options.orderId ? String(options.orderId) : null
   amount.value = options.amount || ''
 })
 

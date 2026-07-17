@@ -7,14 +7,17 @@ import { ref, computed } from 'vue'
 import http, { resolveAssetUrl } from '@/utils/request.js'
 
 function normalizeSpec(spec = {}) {
-  return { ...spec, specId: spec.specId ?? spec.id }
+  const specId = spec.specId ?? spec.id
+  return { ...spec, id: spec.id == null ? spec.id : String(spec.id), specId: specId == null ? specId : String(specId) }
 }
 
 function normalizeService(item = {}) {
   const specs = (item.specs || []).map(normalizeSpec)
   return {
     ...item,
-    itemId: item.itemId ?? item.id,
+    id: item.id == null ? item.id : String(item.id),
+    itemId: item.itemId == null && item.id == null ? undefined : String(item.itemId ?? item.id),
+    categoryId: item.categoryId == null ? item.categoryId : String(item.categoryId),
     coverImage: resolveAssetUrl(item.coverImage),
     images: (item.images || []).map(resolveAssetUrl),
     minPrice: item.minPrice ?? (specs.length ? Math.min(...specs.map((spec) => Number(spec.price))) : null),
@@ -24,7 +27,7 @@ function normalizeService(item = {}) {
 
 function flattenCategories(nodes = [], depth = 0) {
   return nodes.flatMap((node) => [
-    { ...node, depth },
+    { ...node, categoryId: node.categoryId == null ? node.categoryId : String(node.categoryId), depth },
     ...flattenCategories(node.children || [], depth + 1),
   ])
 }

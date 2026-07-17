@@ -31,6 +31,7 @@ import { useMerchantStore } from '@/store/merchant.js'
 import { useNotificationStore } from '@/store/notification.js'
 import { useUserStore } from '@/store/user.js'
 import { requireRole } from '@/utils/permission.js'
+import { API_CAPABILITY, isApiCapabilityAvailable } from '@/constants/api-capabilities.js'
 
 const merchantStore = useMerchantStore()
 const notificationStore = useNotificationStore()
@@ -38,14 +39,15 @@ const userStore = useUserStore()
 const dashboard = computed(() => merchantStore.dashboard)
 const tabs = computed(() => MERCHANT_TABS.map((tab) => tab.label === '订单' ? { ...tab, badge: dashboard.value?.waitingDispatch || '' } : tab.label === '我的' ? { ...tab, badge: notificationStore.unreadCount || '' } : tab))
 onShow(async () => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await Promise.all([merchantStore.fetchDashboard(), merchantStore.fetchExceptions(), notificationStore.fetchUnreadCount()]); merchantStore.dashboard.exceptionCount = merchantStore.exceptions.filter((item) => !['RESOLVED','CLOSED'].includes(item.status)).length })
-function goOrders(filter) { uni.redirectTo({ url: `/subpkg-merchant/orders/index${filter ? `?filter=${filter}` : ''}` }) }
-function goServices() { uni.redirectTo({ url: '/subpkg-merchant/services/index' }) }
-function goTeam() { uni.navigateTo({ url: '/subpkg-merchant/team/index' }) }
-function goExceptions() { uni.navigateTo({ url: '/subpkg-merchant/exceptions/index' }) }
-function goComplaints() { uni.navigateTo({ url: '/subpkg-merchant/complaints/index' }) }
-function goNotifications() { uni.navigateTo({ url: '/pages/notification/notification-list' }) }
-function goSettlements() { uni.navigateTo({ url: '/subpkg-merchant/settlements/index' }) }
-function goReports() { uni.navigateTo({ url: '/subpkg-merchant/reports/index' }) }
+function goOrders(filter) { if (!isApiCapabilityAvailable(API_CAPABILITY.MERCHANT_DASHBOARD)) return uni.showToast({ title: '后端暂未提供商户订单列表接口', icon: 'none' }); uni.redirectTo({ url: `/subpkg-merchant/orders/index${filter ? `?filter=${filter}` : ''}` }) }
+function openMockOnly(capability, label, url) { if (!isApiCapabilityAvailable(capability)) return uni.showToast({ title: `后端暂未提供${label}接口`, icon: 'none' }); uni.navigateTo({ url }) }
+function goServices() { openMockOnly(API_CAPABILITY.MERCHANT_SERVICE_MANAGEMENT, '服务管理', '/subpkg-merchant/services/index') }
+function goTeam() { openMockOnly(API_CAPABILITY.MERCHANT_TEAM, '团队管理', '/subpkg-merchant/team/index') }
+function goExceptions() { openMockOnly(API_CAPABILITY.AFTERSALES_DETAIL, '异常工单', '/subpkg-merchant/exceptions/index') }
+function goComplaints() { openMockOnly(API_CAPABILITY.MERCHANT_FEEDBACK, '投诉协同', '/subpkg-merchant/complaints/index') }
+function goNotifications() { openMockOnly(API_CAPABILITY.NOTIFICATIONS, '消息', '/pages/notification/notification-list') }
+function goSettlements() { openMockOnly(API_CAPABILITY.SETTLEMENTS, '结算', '/subpkg-merchant/settlements/index') }
+function goReports() { openMockOnly(API_CAPABILITY.REPORTS, '经营数据', '/subpkg-merchant/reports/index') }
 </script>
 
 <style lang="scss" scoped>

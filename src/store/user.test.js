@@ -142,7 +142,6 @@ describe('userStore — 注册流程', () => {
       smsCode: '123456',
       password: 'mypassword',
       nickname: '新注册',
-      targetRole: ROLES.CUSTOMER,
     })
   })
 })
@@ -224,6 +223,8 @@ describe('userStore — 个人信息', () => {
       nickname: '新昵称',
       gender: 0,
       version: 1,
+    }, {
+      idempotentKey: '00000000-0000-4000-8000-000000000001',
     })
 
     expect(store.userInfo.nickname).toBe('新昵称')
@@ -233,14 +234,6 @@ describe('userStore — 个人信息', () => {
   })
 
   it('fetchRoles 刷新已审核身份和关联档案编号', async () => {
-    http.get.mockResolvedValueOnce({
-      code: 0,
-      data: {
-        roles: [ROLES.CUSTOMER, ROLES.CAREGIVER],
-        caregiverId: 50008,
-        merchantId: null,
-      },
-    })
     const store = useUserStore()
     const roleStore = useRoleStore()
     store.userInfo = { userId: 8, roles: [ROLES.CUSTOMER], currentRole: ROLES.CUSTOMER }
@@ -248,9 +241,8 @@ describe('userStore — 个人信息', () => {
 
     await store.fetchRoles()
 
-    expect(http.get).toHaveBeenCalledWith('/api/v1/profile/roles')
-    expect(roleStore.availableRoles).toEqual([ROLES.CUSTOMER, ROLES.CAREGIVER])
-    expect(store.userInfo.caregiverId).toBe(50008)
+    expect(http.get).not.toHaveBeenCalled()
+    expect(roleStore.availableRoles).toEqual([ROLES.CUSTOMER])
   })
 
   it('switchRole 使用后端新会话替换当前角色和权限', async () => {

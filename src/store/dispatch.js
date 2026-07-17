@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import http, { createIdempotentKey } from '@/utils/request.js'
+import { USE_MOCK_API, unavailableApi } from '@/constants/api-capabilities.js'
 
 export const useDispatchStore = defineStore('dispatch', () => {
   const candidates = ref([])
@@ -8,6 +9,10 @@ export const useDispatchStore = defineStore('dispatch', () => {
   const loading = ref(false)
 
   async function fetchCandidates(orderId) {
+    if (!USE_MOCK_API) {
+      candidates.value = []
+      throw unavailableApi('派单候选人员查询')
+    }
     loading.value = true
     try {
       const res = await http.get(`/api/v1/merchants/orders/${orderId}/candidates`)
@@ -19,14 +24,18 @@ export const useDispatchStore = defineStore('dispatch', () => {
   }
 
   async function fetchAssignments(orderId) {
-    const res = await http.get(`/api/v1/merchants/orders/${orderId}/assignments`)
-    assignments.value = res.data?.list || []
+    const path = USE_MOCK_API
+      ? `/api/v1/merchants/orders/${orderId}/assignments`
+      : '/api/v1/merchants/assignments'
+    const res = await http.get(path)
+    const list = Array.isArray(res.data) ? res.data : res.data?.list || []
+    assignments.value = list.filter((item) => String(item.orderId) === String(orderId))
     return assignments.value
   }
 
-  async function dispatchOrder(orderId, caregiverId, remark = '') {
+  async function dispatchOrder(orderId, caregiverUserId, remark = '') {
     const res = await http.post(`/api/v1/merchants/orders/${orderId}/dispatch`, {
-      caregiverId,
+      [USE_MOCK_API ? 'caregiverId' : 'caregiverUserId']: caregiverUserId,
       remark,
     }, {
       idempotentKey: createIdempotentKey('dispatch'),
@@ -34,9 +43,9 @@ export const useDispatchStore = defineStore('dispatch', () => {
     return res.data
   }
 
-  async function redispatchOrder(orderId, caregiverId, remark = '') {
+  async function redispatchOrder(orderId, caregiverUserId, remark = '') {
     const res = await http.post(`/api/v1/merchants/orders/${orderId}/redispatch`, {
-      caregiverId,
+      [USE_MOCK_API ? 'caregiverId' : 'caregiverUserId']: caregiverUserId,
       remark,
     }, {
       idempotentKey: createIdempotentKey('redispatch'),

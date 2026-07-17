@@ -33,7 +33,7 @@ const orderStore = useOrderStore()
 const order = ref(null)
 const aftersales = ref(null)
 const statusMeta = computed(() => orderStore.getStatusMeta(order.value || {}))
-onLoad(async (options) => { const id = Number(options.id); [order.value, aftersales.value] = await Promise.all([orderStore.fetchOrderDetail(id), orderStore.fetchAftersales(id)]) })
+onLoad(async (options) => { const id = String(options.id || ''); [order.value, aftersales.value] = await Promise.all([orderStore.fetchOrderDetail(id), orderStore.fetchAftersales(id)]) })
 function formatTime(value) { return value ? value.replace('T', ' ').replace('+08:00', '').slice(0, 16) : '--' }
 async function pay() { try { const payment = await orderStore.executePayment(order.value.orderId); const status = payment.success ? 'success' : 'failed'; uni.redirectTo({ url: `/pages/payment-result/payment-result?status=${status}&orderId=${order.value.orderId}&amount=${order.value.totalAmount}` }) } catch { uni.redirectTo({ url: `/pages/payment-result/payment-result?status=failed&orderId=${order.value.orderId}&amount=${order.value.totalAmount}` }) } }
 function cancel() { uni.navigateTo({ url: `/pages/order/cancel-order?id=${order.value.orderId}` }) }

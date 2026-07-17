@@ -32,7 +32,7 @@ describe('orderStore multi-state support', () => {
 
     const result = await store.fetchOrders()
 
-    expect(result.list[0].orderStatus).toBe(ORDER_STATUS.WAITING_SERVICE)
+    expect(result.list[0].orderStatus).toBe(ORDER_STATUS.WAITING_DISPATCH)
     expect(result.list[0].paymentStatus).toBe(PAYMENT_STATUS.PAID)
     expect(result.list[0].status).toBe(1)
   })

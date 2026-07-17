@@ -3,6 +3,19 @@ import uni from '@dcloudio/vite-plugin-uni'
 
 export default defineConfig({
   plugins: [uni()],
+  server: {
+    host: '127.0.0.1',
+    watch: {
+      ignored: ['**/.codex-tmp/**'],
+    },
+    proxy: {
+      '/backend': {
+        target: 'http://192.168.57.85',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/backend/, ''),
+      },
+    },
+  },
   css: {
     preprocessorOptions: {
       scss: {

@@ -79,8 +79,8 @@ const dates = Array.from({ length: 7 }, (_, index) => {
 serviceDate.value = dates[0].value
 
 onLoad(async (options) => {
-  const itemId = Number(options.itemId)
-  const specId = Number(options.specId)
+  const itemId = String(options.itemId || '')
+  const specId = String(options.specId || '')
   service.value = await serviceStore.fetchServiceDetail(itemId)
   selectedSpec.value = service.value.specs.find((spec) => spec.specId === specId) || service.value.specs[0]
   await addressStore.fetchAddresses()

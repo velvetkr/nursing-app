@@ -24,16 +24,16 @@ describe('order status model', () => {
   it('将新状态映射到旧数字状态以兼容现有页面', () => {
     expect(deriveLegacyStatus(ORDER_STATUS.CREATED, PAYMENT_STATUS.UNPAID)).toBe(0)
     expect(deriveLegacyStatus(ORDER_STATUS.WAITING_DISPATCH, PAYMENT_STATUS.PAID)).toBe(1)
-    expect(deriveLegacyStatus(ORDER_STATUS.WAITING_CONFIRM, PAYMENT_STATUS.PAID)).toBe(1)
+    expect(deriveLegacyStatus(ORDER_STATUS.WAITING_CONFIRM, PAYMENT_STATUS.PAID)).toBe(9)
     expect(deriveLegacyStatus(ORDER_STATUS.COMPLETED, PAYMENT_STATUS.PAID)).toBe(2)
     expect(deriveLegacyStatus(ORDER_STATUS.CANCELED, PAYMENT_STATUS.REFUNDING)).toBe(4)
   })
 
   it('为旧订单补齐新状态字段和记录数组', () => {
     const order = normalizeOrderState({ orderId: 1, status: 1 })
-    expect(order.orderStatus).toBe(ORDER_STATUS.WAITING_SERVICE)
+    expect(order.orderStatus).toBe(ORDER_STATUS.WAITING_DISPATCH)
     expect(order.paymentStatus).toBe(PAYMENT_STATUS.PAID)
-    expect(order.assignmentStatus).toBe(ASSIGNMENT_STATUS.ACCEPTED)
+    expect(order.assignmentStatus).toBe(ASSIGNMENT_STATUS.UNASSIGNED)
     expect(order.assignments).toEqual([])
     expect(order.serviceRecords).toEqual([])
   })

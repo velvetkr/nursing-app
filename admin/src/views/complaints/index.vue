@@ -5,5 +5,5 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useComplaintStore } from '../../stores/complaint.js'
-const router = useRouter(); const store = useComplaintStore(); const status = ref(4); const options = [{ label: '全部', value: '' }, { label: '平台仲裁', value: 4 }, { label: '已裁决', value: 2 }, { label: '已关闭', value: 3 }]; function load() { return store.fetchComplaints(status.value === '' ? {} : { status: status.value }) } function goDetail(row) { router.push(`/complaints/${row.complaintId}`) } function statusText(value) { return ({ 0: '待商户响应', 1: '商户处理中', 2: '已裁决', 3: '已关闭', 4: '平台仲裁' }[value] || value) } watch(status, load, { immediate: true })
+const router = useRouter(); const store = useComplaintStore(); const status = ref(0); const options = [{ label: '全部', value: '' }, { label: '待处理', value: 0 }, { label: '处理中', value: 1 }, { label: '已解决', value: 2 }, { label: '已关闭', value: 3 }]; function load() { return store.fetchComplaints(status.value === '' ? {} : { status: status.value }) } function goDetail(row) { router.push(`/complaints/${row.id}`) } function statusText(value) { return ({ 0: '待处理', 1: '处理中', 2: '已解决', 3: '已关闭' }[value] || value) } watch(status, load, { immediate: true })
 </script>

@@ -5,7 +5,7 @@
  * - 统一响应 { code: 0, message, data } — code=0 为成功
  * - 全局错误码 1000-1999 通用 / 2000-2999 用户 / 3000-3999 订单 / 4000-4999 评价投诉
  * - JWT Bearer Token 鉴权，401 + code=1002/1003 跳转登录
- * - 支持 Idempotent-Key 幂等请求头
+ * - 支持 Idempotency-Key 幂等请求头
  * - 支持 PATCH / DELETE 方法
  */
 import { clearAuthStorage, getToken } from './storage.js'
@@ -145,12 +145,9 @@ function request(options = {}) {
       header['Authorization'] = `Bearer ${token}`
     }
     // 幂等键：优先使用 options 传入的，其次全局的
-    const idempotentKey = options.idempotentKey || options.idempotent || _idempotentKey
+    const idempotentKey = options.idempotencyKey || options.idempotentKey || options.idempotent || _idempotentKey
     if (idempotentKey) {
-      header['Idempotent-Key'] = idempotentKey
-    }
-    if (options.idempotencyKey) {
-      header['Idempotency-Key'] = options.idempotencyKey
+      header['Idempotency-Key'] = idempotentKey
     }
 
     uni.request({
@@ -233,7 +230,7 @@ const http = {
   /** 上传文件（multipart/form-data） */
   upload(url, filePath, formData = {}, options = {}) {
     const token = getToken()
-    const idempotentKey = options.idempotentKey || createIdempotentKey('upload')
+    const idempotentKey = options.idempotencyKey || options.idempotentKey || createIdempotentKey('upload')
     return new Promise((resolve, reject) => {
       uni.uploadFile({
         url: BASE_URL + url,
@@ -242,7 +239,7 @@ const http = {
         formData,
         header: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          'Idempotent-Key': idempotentKey,
+          'Idempotency-Key': idempotentKey,
           ...options.header,
         },
         timeout: options.timeout || 30000,

@@ -26,7 +26,7 @@ const remark = ref('')
 const submitting = ref(false)
 const order = computed(() => merchantStore.currentOrder)
 const isRedispatch = computed(() => mode.value === 'redispatch')
-onLoad(async (options) => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; orderId.value = Number(options.id); mode.value = options.mode === 'redispatch' ? 'redispatch' : 'dispatch'; await Promise.all([merchantStore.fetchOrderDetail(orderId.value), dispatchStore.fetchCandidates(orderId.value)]) })
+onLoad(async (options) => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; orderId.value = String(options.id || ''); mode.value = options.mode === 'redispatch' ? 'redispatch' : 'dispatch'; try { await Promise.all([merchantStore.fetchOrderDetail(orderId.value), dispatchStore.fetchCandidates(orderId.value)]) } catch (error) { if (error?.code !== 'API_NOT_AVAILABLE') throw error } })
 function slotText(slot) { return ({ MORNING: '上午 08:00-12:00', AFTERNOON: '下午 13:00-17:00', EVENING: '晚上 18:00-21:00' }[slot] || slot) }
 function selectCandidate(candidate) { if (!candidate.eligible) return uni.showToast({ title: candidate.conflictReasons?.[0] || '当前不可派单', icon: 'none' }); selectedId.value = candidate.caregiverId }
 async function submit() { if (!selectedId.value || submitting.value) return; submitting.value = true; try { if (isRedispatch.value) await dispatchStore.redispatchOrder(orderId.value, selectedId.value, remark.value.trim()); else await dispatchStore.dispatchOrder(orderId.value, selectedId.value, remark.value.trim()); uni.showToast({ title: '派单成功', icon: 'success' }); setTimeout(() => uni.redirectTo({ url: `/subpkg-merchant/order-detail/index?id=${orderId.value}` }), 700) } finally { submitting.value = false } }

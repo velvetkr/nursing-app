@@ -10,6 +10,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import http, { createIdempotentKey } from '@/utils/request.js'
 import { COMPLAINT_STATUS, getComplaintStatusMeta } from '@/constants/complaint-status.js'
+import { USE_MOCK_API, unavailableApi } from '@/constants/api-capabilities.js'
 
 export const useComplaintStore = defineStore('complaint', () => {
   // ===== 状态 =====
@@ -94,6 +95,7 @@ export const useComplaintStore = defineStore('complaint', () => {
   }
 
   async function fetchMerchantComplaints(params = {}) {
+    if (!USE_MOCK_API) { merchantComplaints.value = []; return { list: [] } }
     loading.value = true
     try {
       const res = await http.get('/api/v1/merchant/complaints', params)
@@ -105,12 +107,14 @@ export const useComplaintStore = defineStore('complaint', () => {
   }
 
   async function fetchMerchantComplaintDetail(complaintId) {
+    if (!USE_MOCK_API) throw unavailableApi('商户投诉协同')
     const res = await http.get(`/api/v1/merchant/complaints/${complaintId}`)
     currentMerchantComplaint.value = res.data
     return currentMerchantComplaint.value
   }
 
   async function processMerchantComplaint(complaintId, action, payload) {
+    if (!USE_MOCK_API) throw unavailableApi('商户投诉协同')
     const res = await http.post(`/api/v1/merchant/complaints/${complaintId}/${action}`, payload, {
       idempotentKey: createIdempotentKey(`merchant-complaint-${action}`),
     })

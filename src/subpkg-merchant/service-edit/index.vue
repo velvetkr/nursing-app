@@ -32,7 +32,7 @@ const categoryIndex = computed(() => Math.max(0, serviceStore.categories.findInd
 const selectedCategoryName = computed(() => serviceStore.categories.find((item) => item.categoryId === form.categoryId)?.name || '')
 
 function createEmptySpec(spec = {}) { return { localId: localId++, specId: spec.specId || null, name: spec.name || '', price: String(spec.price ?? ''), originalPrice: String(spec.originalPrice ?? ''), duration: String(spec.duration ?? 60) } }
-onLoad(async (options) => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await serviceStore.fetchCategories(); if (options.id) { itemId.value = Number(options.id); const service = await serviceManageStore.fetchServiceDetail(itemId.value); Object.assign(form, { name: service.name, categoryId: service.categoryId, coverImage: service.coverImage || '', description: service.description, specs: service.specs.map(createEmptySpec) }) } })
+onLoad(async (options) => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; await serviceStore.fetchCategories(); if (options.id) { itemId.value = String(options.id); const service = await serviceManageStore.fetchServiceDetail(itemId.value); Object.assign(form, { name: service.name, categoryId: service.categoryId, coverImage: service.coverImage || '', description: service.description, specs: service.specs.map(createEmptySpec) }) } })
 function changeCategory(event) { form.categoryId = serviceStore.categories[Number(event.detail.value)]?.categoryId || null }
 function addSpec() { if (form.specs.length >= 6) return uni.showToast({ title: '最多添加6个规格', icon: 'none' }); form.specs.push(createEmptySpec()) }
 function removeSpec(index) { form.specs.splice(index, 1) }

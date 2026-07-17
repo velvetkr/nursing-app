@@ -51,7 +51,7 @@ const hasActions = computed(() => canEdit.value || canSubmit.value || canPublish
 const statusDescription = computed(() => ({ DRAFT: '服务仍为草稿，可继续编辑后提交审核', PENDING_REVIEW: '平台正在审核服务资料，审核期间不可编辑', APPROVED: service.value?.publishStatus === SERVICE_PUBLISH_STATUS.PUBLISHED ? '服务已审核通过并在顾客端展示' : '服务已审核通过，可以上架', REJECTED: '请根据审核意见修改后重新提交' }[service.value?.auditStatus] || '服务状态已更新'))
 const statusIcon = computed(() => ({ DRAFT: 'edit-pen', PENDING_REVIEW: 'clock-fill', APPROVED: 'checkmark-circle-fill', REJECTED: 'close-circle-fill' }[service.value?.auditStatus] || 'info-circle'))
 
-onLoad(async (options) => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; itemId = Number(options.id); await refresh() })
+onLoad(async (options) => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; itemId = String(options.id || ''); await refresh() })
 onShow(async () => { if (itemId) await refresh() })
 async function refresh() { await serviceManageStore.fetchServiceDetail(itemId) }
 function formatTime(value) { return value ? value.replace('T', ' ').replace('+08:00', '').slice(0, 16) : '--' }

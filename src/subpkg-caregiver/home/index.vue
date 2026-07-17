@@ -46,6 +46,7 @@ import { ROLES } from '@/constants/roles.js'
 import { CAREGIVER_TABS } from '@/constants/caregiver-navigation.js'
 import { requireRole } from '@/utils/permission.js'
 import RoleTabBar from '@/components/base/role-tab-bar.vue'
+import { API_CAPABILITY, isApiCapabilityAvailable } from '@/constants/api-capabilities.js'
 
 const userStore = useUserStore()
 const workOrderStore = useWorkOrderStore()
@@ -73,8 +74,8 @@ function getTaskStatusText(task) {
 }
 function goTasks(filter) { uni.redirectTo({ url: `/subpkg-caregiver/tasks/index${filter ? `?filter=${filter}` : ''}` }) }
 function goDetail(id) { uni.navigateTo({ url: `/subpkg-caregiver/task-detail/index?id=${id}` }) }
-function goSchedule() { uni.redirectTo({ url: '/subpkg-caregiver/schedule/index' }) }
-function goNotifications() { uni.navigateTo({ url: '/pages/notification/notification-list' }) }
+function goSchedule() { if (!isApiCapabilityAvailable(API_CAPABILITY.CAREGIVER_SCHEDULE)) return uni.showToast({ title: '后端暂未提供排班接口', icon: 'none' }); uni.redirectTo({ url: '/subpkg-caregiver/schedule/index' }) }
+function goNotifications() { if (!isApiCapabilityAvailable(API_CAPABILITY.NOTIFICATIONS)) return uni.showToast({ title: '后端暂未提供消息接口', icon: 'none' }); uni.navigateTo({ url: '/pages/notification/notification-list' }) }
 </script>
 
 <style lang="scss" scoped>

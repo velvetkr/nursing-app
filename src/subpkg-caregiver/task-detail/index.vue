@@ -50,7 +50,7 @@ const taskDescription = computed(() => taskMeta.value.description || ({ WAITING_
 
 onLoad(async (options) => {
   if (!requireRole(ROLES.CAREGIVER)) return
-  await workOrderStore.fetchTaskDetail(Number(options.id))
+  await workOrderStore.fetchTaskDetail(String(options.id || ''))
 })
 
 function formatTime(value) { return value ? value.replace('T', ' ').replace('+08:00', '').slice(0, 16) : '--' }
@@ -65,11 +65,11 @@ async function resolveLocation() {
 }
 async function checkIn() {
   try {
-    const location = await resolveLocation()
-    await workOrderStore.checkIn(task.value.orderId, { latitude: location.latitude, longitude: location.longitude, distanceMeters: 35, abnormal: false })
+    await resolveLocation()
+    await workOrderStore.checkIn(task.value.orderId, { remark: '护理人员已到达服务地点' })
     uni.showToast({ title: '签到成功', icon: 'success' })
   } catch {
-    uni.showModal({ title: '无法获取定位', content: '是否提交异常签到？该记录将由商户审核。', success: async ({ confirm }) => { if (!confirm) return; await workOrderStore.checkIn(task.value.orderId, { abnormal: true, abnormalReason: '设备定位不可用' }); uni.showToast({ title: '异常签到已提交', icon: 'none' }) } })
+    uni.showModal({ title: '无法获取定位', content: '是否仍提交到达签到？', success: async ({ confirm }) => { if (!confirm) return; await workOrderStore.checkIn(task.value.orderId, { remark: '设备定位不可用，护理人员手动确认到达' }); uni.showToast({ title: '签到已提交', icon: 'success' }) } })
   }
 }
 function startService() { uni.showModal({ title: '开始服务', content: '请确认已完成身份核验，并准备开始护理服务。', success: async ({ confirm }) => { if (!confirm) return; await workOrderStore.startService(task.value.orderId); uni.showToast({ title: '服务已开始', icon: 'success' }) } }) }

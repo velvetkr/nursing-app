@@ -19,7 +19,7 @@ describe('request — 错误码映射', () => {
   // 因为 request 使用 uni.request，所以在此测试 Mock 集成
 
   it('BASE_URL 为开发环境地址', () => {
-    expect(BASE_URL).toBe('http://localhost:8080')
+    expect(BASE_URL).toBe('/backend')
   })
 
   it('http 对象包含所有 HTTP 快捷方法', () => {
@@ -36,7 +36,7 @@ describe('request — 错误码映射', () => {
   })
 
   it('相对资源路径自动拼接网关地址', () => {
-    expect(resolveAssetUrl('/uploads/a.png')).toBe('http://localhost:8080/uploads/a.png')
+    expect(resolveAssetUrl('/uploads/a.png')).toBe('/backend/uploads/a.png')
   })
 
   it('http.get 调用 uni.request 并返回 Promise', async () => {
@@ -100,7 +100,7 @@ describe('request — 幂等键管理', () => {
   it('幂等键会添加到请求头', async () => {
     setIdempotentKey('idem-test-456')
     uni.request.mockImplementationOnce((opts) => {
-      expect(opts.header['Idempotent-Key']).toBe('idem-test-456')
+      expect(opts.header['Idempotency-Key']).toBe('idem-test-456')
       opts.success({ statusCode: 200, data: { code: 0, message: 'ok', data: null } })
     })
     await http.post('/api/v1/orders', { itemId: 1 })
@@ -109,7 +109,7 @@ describe('request — 幂等键管理', () => {
   it('options 传入的幂等键优先于全局', async () => {
     setIdempotentKey('global-key')
     uni.request.mockImplementationOnce((opts) => {
-      expect(opts.header['Idempotent-Key']).toBe('inline-key')
+      expect(opts.header['Idempotency-Key']).toBe('inline-key')
       opts.success({ statusCode: 200, data: { code: 0, message: 'ok', data: null } })
     })
     // 通过 request 直接调用以传入 idempotent 选项

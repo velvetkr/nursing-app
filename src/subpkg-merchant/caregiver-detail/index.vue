@@ -21,7 +21,7 @@ const teamStore = useMerchantTeamStore()
 const relationId = ref(null)
 const person = computed(() => teamStore.currentCaregiver)
 const statusMeta = computed(() => getCooperationStatusMeta(person.value?.status))
-onLoad(async (options) => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; relationId.value = Number(options.id); await teamStore.fetchCaregiverDetail(relationId.value) })
+onLoad(async (options) => { if (!requireRole(ROLES.MERCHANT_MEMBER)) return; relationId.value = String(options.id || ''); await teamStore.fetchCaregiverDetail(relationId.value) })
 function changeStatus(action) { const isSuspend = action === 'suspend'; uni.showModal({ title: isSuspend ? '暂停合作' : '恢复合作', content: isSuspend ? '暂停后该护理人员不会出现在派单候选列表中。确认继续吗？' : '恢复后该护理人员可重新进入派单候选列表。', editable: isSuspend, placeholderText: '可填写暂停原因', success: async ({ confirm, content }) => { if (!confirm) return; await teamStore.updateCaregiverStatus(relationId.value, action, content || ''); uni.showToast({ title: isSuspend ? '已暂停合作' : '已恢复合作', icon: 'success' }) } }) }
 </script>
 

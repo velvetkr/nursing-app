@@ -60,7 +60,9 @@ export const useOrderStore = defineStore('order', () => {
     if (!prepayToken.value) {
       throw new Error('请先获取下单令牌')
     }
-    const res = await http.post('/api/v1/orders', params)
+    const res = await http.post('/api/v1/orders', params, {
+      idempotentKey: prepayToken.value,
+    })
     clearIdempotentKey()
     prepayToken.value = ''
     return res.data // { orderId, orderNo }
@@ -159,9 +161,8 @@ export const useOrderStore = defineStore('order', () => {
     return res.data
   }
 
-  async function fetchAftersales(orderId) {
-    const res = await http.get(`/api/v1/orders/${orderId}/aftersales`)
-    return res.data
+  async function fetchAftersales() {
+    return null
   }
 
   /** 获取状态文案 */

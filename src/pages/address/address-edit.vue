@@ -46,7 +46,7 @@ const regionText = computed(() => [form.province, form.city, form.district].filt
 
 onLoad(async (options) => {
   if (!options.id) return
-  addressId.value = Number(options.id)
+  addressId.value = String(options.id)
   if (!addressStore.addresses.length) await addressStore.fetchAddresses()
   const address = addressStore.addresses.find((item) => item.addressId === addressId.value)
   if (address) Object.assign(form, address)
